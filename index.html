@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ISS — NTT TERMINAL CABLE REQUEST MONITORING</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+<!-- ██████████ FIREBASE SDK ██████████ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │  PALITAN MO ITO NG IYONG FIREBASE CONFIG             │
+  // └─────────────────────────────────────────────────────┘
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // Expose to global scope so the rest of the script can use it
+  window._fbDb  = db;
+  window._fbRef = ref;
+  window._fbSet = set;
+  window._fbGet = get;
+  window._fbOnValue  = onValue;
+  window._fbUpdate   = update;
+  window._fbReady    = true;
+
+  // Signal that Firebase is loaded
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+/* ══ THEME VARIABLES ══ */
+[data-theme="dark"] {
+  --cyan:#22d3ee;--cyan-dim:#0891b2;--emerald:#10b981;--amber:#f59e0b;--rose:#f43f5e;--violet:#8b5cf6;
+  --bg-deep:#040a14;--bg-card:#0a1626;--bg-panel:#071020;--bg-sidebar:#05101f;
+  --border:#162d4a;--border-bright:rgba(34,211,238,0.2);
+  --text:#c8dff5;--text-dim:#3d5a7a;--text-mid:#7a9cc0;
+  --card-bg:linear-gradient(145deg,#0e1f38 0%,#090f1f 100%);--card-border:#162d4a;
+  --glass-bg:linear-gradient(145deg,#0e1f38,#090f1f);
+  --table-header-bg:rgba(4,10,20,0.85);--input-bg:rgba(4,10,20,0.8);
+  --scrollbar-thumb:#1e3a5f;--stat-card-bg:linear-gradient(145deg,#0e1f38,#090f1f);
+  --sidebar-bg:linear-gradient(180deg,#050f1e 0%,#030810 100%);
+  --header-bg:linear-gradient(90deg,rgba(5,16,31,0.98),rgba(4,10,20,0.98));
+  --modal-bg:#0d1e33;--body-grid:rgba(34,211,238,0.02);
+  --nodes-th-color:var(--cyan);--nodes-th-border:rgba(34,211,238,0.18);
+}
+[data-theme="light"] {
+  --cyan:#0891b2;--cyan-dim:#0e7490;--emerald:#059669;--amber:#d97706;--rose:#e11d48;--violet:#7c3aed;
+  --bg-deep:#f0f4f8;--bg-card:#ffffff;--bg-panel:#e8eef5;--bg-sidebar:#1a2d45;
+  --border:#c8d8e8;--border-bright:rgba(8,145,178,0.3);
+  --text:#1a2d45;--text-dim:#6b8599;--text-mid:#3d5a7a;
+  --card-bg:linear-gradient(145deg,#ffffff 0%,#f0f5fb 100%);--card-border:#c8d8e8;
+  --glass-bg:linear-gradient(145deg,#ffffff,#f0f5fb);
+  --table-header-bg:rgba(240,244,248,0.95);--input-bg:rgba(255,255,255,0.9);
+  --scrollbar-thumb:#9ab5cc;--stat-card-bg:linear-gradient(145deg,#ffffff,#f0f5fb);
+  --sidebar-bg:linear-gradient(180deg,#1a2d45 0%,#0f1e30 100%);
+  --header-bg:linear-gradient(90deg,rgba(26,45,69,0.97),rgba(15,30,48,0.97));
+  --modal-bg:#1a2d45;--body-grid:rgba(8,145,178,0.04);
+  --nodes-th-color:var(--cyan);--nodes-th-border:rgba(8,145,178,0.25);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background-color:var(--bg-deep);font-family:'Exo 2',sans-serif;color:var(--text);display:flex;flex-direction:column;transition:background-color 0.3s,color 0.3s;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(var(--body-grid) 1px,transparent 1px),linear-gradient(90deg,var(--body-grid) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg-deep);}
+::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:var(--cyan-dim);}
+
+/* ══ SYNC INDICATOR ══ */
+#syncIndicator{
+  position:fixed;top:66px;right:16px;z-index:9999;
+  display:flex;align-items:center;gap:7px;
+  padding:5px 12px;border-radius:20px;
+  font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;letter-spacing:2px;
+  background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.22);color:var(--emerald);
+  opacity:0;transition:opacity 0.4s;pointer-events:none;
+}
+#syncIndicator.show{opacity:1;}
+#syncIndicator.saving{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.22);color:var(--amber);}
+#syncIndicator.error{background:rgba(244,63,94,0.1);border-color:rgba(244,63,94,0.22);color:var(--rose);}
+#syncIndicator.offline{background:rgba(244,63,94,0.1);border-color:rgba(244,63,94,0.22);color:var(--rose);}
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {
+  #sidebar { width:0 !important; overflow:hidden; padding:0; border:none; }
+  #sidebar:hover { width:0 !important; }
+  #mobileNav { display:flex !important; }
+  #mainContent { width:100%; }
+  #rightPanel { display:none !important; }
+  #appHeader { padding:0 12px; height:52px; }
+  .header-brand-logo { font-size:16px; }
+  .header-title { font-size:7px; letter-spacing:1.5px; }
+  .header-subtitle { display:none; }
+  .header-clock-time { font-size:11px; }
+  .header-clock-date { display:none; }
+  .header-user-role { display:none; }
+  #headerNewReqBtn span { display:none; }
+  #headerNewReqBtn { padding:6px 10px !important; }
+  .stat-card { padding:14px 12px; }
+  .stat-card p[id] { font-size:26px !important; }
+  #monthsContainer { grid-template-columns:1fr 1fr !important; gap:8px !important; }
+  .sp-ds-split { grid-template-columns:1fr !important; }
+  .sp-ds-divider { display:none; }
+  .ds-column { padding-left:0; padding-top:20px; border-top:1px solid var(--border); }
+  .sp-column { padding-right:0; }
+  .page-view > div { padding:14px !important; }
+  .glass-card { padding:14px !important; }
+  .stat-card p { font-size:8px; }
+  .page-title { font-size:18px !important; }
+  #dashStatGrid { grid-template-columns:1fr 1fr !important; gap:8px !important; }
+  .month-analytics-card { padding:14px; }
+  #rpt-top-counters { grid-template-columns:1fr 1fr !important; }
+}
+@media (max-width: 480px) {
+  #monthsContainer { grid-template-columns:1fr !important; }
+  #dashStatGrid { grid-template-columns:1fr 1fr !important; }
+}
+
+/* ══ MOBILE BOTTOM NAV ══ */
+#mobileNav {
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--bg-sidebar);
+  border-top:1px solid rgba(34,211,238,0.12);
+  padding:6px 0 max(6px, env(safe-area-inset-bottom));
+  box-shadow:0 -4px 20px rgba(0,0,0,0.5);
+}
+.mob-nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:4px 0;cursor:pointer;color:rgba(255,255,255,0.35);
+  font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:1px;
+  border:none;background:none;transition:color 0.2s;
+}
+.mob-nav-btn i{font-size:14px;}
+.mob-nav-btn.active{color:var(--cyan);}
+.mob-nav-btn.active i{text-shadow:0 0 10px rgba(34,211,238,0.6);}
+
+/* Add bottom padding for mobile nav */
+@media (max-width:768px){
+  #mainContent .page-view > div:first-child { padding-bottom:80px !important; }
+}
+
+/* ══ MODE BANNER ══ */
+#modeBanner{display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 16px;z-index:100;flex-shrink:0;transition:all 0.4s ease;font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2.5px;}
+#modeBanner.locked{background:linear-gradient(90deg,rgba(244,63,94,0.10),rgba(244,63,94,0.05),rgba(244,63,94,0.10));border-bottom:1px solid rgba(244,63,94,0.2);color:var(--rose);}
+#modeBanner.unlocked{background:linear-gradient(90deg,rgba(16,185,129,0.08),rgba(16,185,129,0.04),rgba(16,185,129,0.08));border-bottom:1px solid rgba(16,185,129,0.18);color:var(--emerald);}
+#modeBanner.admin-auto{background:linear-gradient(90deg,rgba(34,211,238,0.08),rgba(34,211,238,0.04),rgba(34,211,238,0.08));border-bottom:1px solid rgba(34,211,238,0.2);color:var(--cyan);}
+
+/* ══ SIDEBAR ══ */
+#appWrapper{display:flex;flex:1;overflow:hidden;position:relative;z-index:1;}
+#sidebar{width:64px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid rgba(34,211,238,0.08);box-shadow:4px 0 24px rgba(0,0,0,0.6);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:4px;z-index:50;overflow:visible;transition:width 0.35s cubic-bezier(0.4,0,0.2,1);position:relative;}
+#sidebar:hover{width:196px;}
+#sidebar:hover .sidebar-logo-text{opacity:1;transform:translateX(0);width:auto;}
+#sidebar:hover .nav-label{opacity:1;max-width:120px;}
+#sidebar:hover .nav-btn{width:calc(100% - 18px);justify-content:flex-start;padding-left:14px;gap:12px;border-radius:11px;}
+#sidebar:hover .nav-tooltip{display:none;}
+#sidebar:hover .sidebar-logo{width:calc(100% - 18px);justify-content:flex-start;padding-left:8px;gap:10px;}
+.sidebar-logo{font-family:'Rajdhani',sans-serif;font-weight:700;display:flex;align-items:center;gap:6px;width:42px;height:42px;color:var(--cyan);margin-bottom:16px;text-shadow:0 0 16px rgba(34,211,238,0.5);transition:all 0.35s ease;overflow:hidden;justify-content:center;flex-shrink:0;}
+.sidebar-logo-abbr{font-size:17px;letter-spacing:3px;flex-shrink:0;}
+.sidebar-logo-text{font-size:9px;letter-spacing:2px;color:var(--cyan);opacity:0;transform:translateX(-10px);transition:all 0.35s ease;white-space:nowrap;width:0;overflow:hidden;line-height:1.2;font-weight:600;}
+.nav-btn{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.25s ease;position:relative;border:1px solid transparent;color:rgba(255,255,255,0.4);font-size:15px;flex-shrink:0;}
+.nav-btn:hover{color:#c8dff5;background:rgba(34,211,238,0.07);border-color:rgba(34,211,238,0.1);}
+.nav-btn.active{color:var(--cyan);background:rgba(34,211,238,0.09);border-color:rgba(34,211,238,0.22);box-shadow:0 0 14px rgba(34,211,238,0.1),inset 0 0 10px rgba(34,211,238,0.04);}
+.nav-btn i{flex-shrink:0;width:15px;text-align:center;}
+.nav-label{font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;opacity:0;max-width:0;overflow:hidden;transition:all 0.3s ease;color:rgba(255,255,255,0.7);}
+.nav-btn.active .nav-label{color:var(--cyan);}
+.nav-tooltip{position:absolute;left:56px;top:50%;transform:translateY(-50%);background:#0c1c30;color:#e2e8f0;font-size:9px;font-weight:700;padding:4px 11px;border-radius:7px;border:1px solid var(--border);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:200;text-transform:uppercase;letter-spacing:2px;font-family:'Share Tech Mono',monospace;box-shadow:0 4px 12px rgba(0,0,0,0.6);}
+.nav-btn:hover .nav-tooltip{opacity:1;}
+#sidebar:hover .nav-btn:hover .nav-tooltip{opacity:0;}
+.sidebar-spacer{flex:1;}
+
+/* ══ MAIN CONTENT ══ */
+#mainContent{flex:1;overflow:hidden;display:flex;position:relative;}
+.page-view{display:none;width:100%;height:100%;overflow-y:auto;flex-direction:column;}
+.page-view.active{display:flex;}
+
+/* ══ CARDS ══ */
+.glass-card{background:var(--glass-bg);border:1px solid var(--card-border);border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.03);position:relative;overflow:hidden;transition:box-shadow 0.25s,border-color 0.25s;}
+.glass-card::before{content:'';position:absolute;inset:0;border-radius:14px;background:linear-gradient(135deg,rgba(34,211,238,0.025) 0%,transparent 60%);pointer-events:none;}
+.glass-card:hover{border-color:rgba(34,211,238,0.18);}
+[data-theme="light"] .glass-card{box-shadow:0 4px 24px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.8);}
+.stat-card{background:var(--stat-card-bg);border:1px solid var(--card-border);border-radius:14px;padding:20px 18px;position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.25s;}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:14px 14px 0 0;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card.cyan::after{background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.stat-card.emerald::after{background:linear-gradient(90deg,transparent,var(--emerald),transparent);}
+.stat-card.amber::after{background:linear-gradient(90deg,transparent,var(--amber),transparent);}
+.stat-card.rose::after{background:linear-gradient(90deg,transparent,var(--rose),transparent);}
+[data-theme="light"] .stat-card{box-shadow:0 4px 20px rgba(0,0,0,0.08);}
+.month-analytics-card{background:var(--glass-bg);border:1px solid var(--card-border);border-radius:14px;padding:20px;position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.25s ease;cursor:pointer;}
+.month-analytics-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(34,211,238,0.3),transparent);opacity:0;transition:opacity 0.25s;}
+.month-analytics-card:hover{transform:translateY(-2px);border-color:rgba(34,211,238,0.2);}
+.month-analytics-card:hover::before{opacity:1;}
+.month-stat-mini{background:rgba(4,10,20,0.5);border:1px solid rgba(22,45,74,0.5);border-radius:8px;padding:10px 12px;}
+[data-theme="light"] .month-stat-mini{background:rgba(8,145,178,0.05);border:1px solid rgba(8,145,178,0.15);}
+
+/* ══ TYPOGRAPHY ══ */
+.section-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;display:block;}
+.page-title{font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--text);letter-spacing:1.5px;line-height:1;}
+
+/* ══ BUTTONS ══ */
+.btn-primary{background:linear-gradient(135deg,#0891b2,#0e7490);border:1px solid rgba(34,211,238,0.28);box-shadow:0 4px 12px rgba(8,145,178,0.22),inset 0 1px 0 rgba(255,255,255,0.08);color:white;font-weight:700;font-family:'Exo 2',sans-serif;border-radius:9px;padding:8px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:all 0.2s;white-space:nowrap;display:inline-flex;align-items:center;}
+.btn-primary:hover{background:linear-gradient(135deg,#22d3ee,#0891b2);box-shadow:0 6px 20px rgba(34,211,238,0.3);transform:translateY(-1px);}
+.btn-secondary{background:var(--glass-bg);border:1px solid var(--card-border);box-shadow:0 2px 8px rgba(0,0,0,0.1),inset 0 1px 0 rgba(255,255,255,0.03);color:var(--text);font-weight:600;font-family:'Exo 2',sans-serif;border-radius:9px;padding:8px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:all 0.2s;white-space:nowrap;display:inline-flex;align-items:center;}
+.btn-secondary:hover{border-color:rgba(34,211,238,0.22);}
+.btn-danger{background:linear-gradient(135deg,rgba(244,63,94,0.14),rgba(244,63,94,0.07));border:1px solid rgba(244,63,94,0.28);color:var(--rose);font-weight:700;font-family:'Exo 2',sans-serif;border-radius:9px;padding:8px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;}
+.btn-danger:hover{background:rgba(244,63,94,0.2);box-shadow:0 0 16px rgba(244,63,94,0.18);}
+
+/* ══ TABLE ══ */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{background:var(--table-header-bg);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);padding:12px 14px;border-bottom:1px solid var(--border);text-transform:uppercase;position:sticky;top:0;z-index:10;}
+.data-table td{padding:12px 14px;border-bottom:1px solid rgba(22,45,74,0.25);font-size:11px;vertical-align:middle;color:var(--text);}
+[data-theme="light"] .data-table td{border-bottom:1px solid rgba(200,216,232,0.5);}
+.data-table tr:hover td{background:rgba(34,211,238,0.015);}
+.data-table tr:last-child td{border-bottom:none;}
+
+/* ══ BADGES ══ */
+.badge{display:inline-block;padding:2px 9px;border-radius:7px;font-size:8px;font-weight:700;letter-spacing:2px;font-family:'Share Tech Mono',monospace;text-transform:uppercase;}
+.badge-pending{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.28);color:var(--amber);}
+.badge-done{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.28);color:var(--emerald);}
+.badge-reported{background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.28);color:var(--rose);}
+.done-date-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 7px;border-radius:5px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);color:var(--emerald);display:inline-block;margin-top:2px;}
+
+/* ══ FORM ══ */
+.form-input{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;padding:9px 12px;font-size:11px;outline:none;width:100%;transition:border-color 0.2s,box-shadow 0.2s;}
+.form-input:focus{border-color:var(--cyan-dim);box-shadow:0 0 0 3px rgba(8,145,178,0.08);}
+.form-input::placeholder{color:var(--text-dim);}
+select.form-input{appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322d3ee' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 10px center;background-size:11px;}
+[data-theme="light"] select.form-input{background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230891b2' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");}
+
+/* ══ MOVE-TO DROPDOWN ══ */
+.move-to-select{background:var(--input-bg);border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;letter-spacing:1px;padding:5px 22px 5px 9px;cursor:pointer;outline:none;min-width:110px;transition:border-color 0.2s,color 0.2s;appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322d3ee' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 7px center;background-size:10px;}
+.move-to-select:hover{border-color:rgba(34,211,238,0.28);color:var(--text);}
+
+.user-badge{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:2px 8px;border-radius:5px;background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.16);color:var(--cyan);display:inline-block;}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:white;flex-shrink:0;background:linear-gradient(135deg,var(--cyan-dim),#1e40af);border:1px solid rgba(34,211,238,0.28);box-shadow:0 0 12px rgba(34,211,238,0.14);font-family:'Share Tech Mono',monospace;overflow:hidden;}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+
+/* ══ LOGIN ══ */
+#loginScreen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#0a1525 0%,#040a14 70%);}
+[data-theme="light"] #loginScreen{background:radial-gradient(ellipse at 50% 40%,#d8e8f5 0%,#c5d8ec 70%);}
+.login-card{background:var(--glass-bg);border:1px solid var(--card-border);border-radius:20px;padding:34px;box-shadow:0 0 0 1px rgba(34,211,238,0.04),0 32px 80px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04);width:100%;max-width:360px;}
+.login-tab{flex:1;text-align:center;padding:8px;font-size:9px;font-weight:700;letter-spacing:2px;font-family:'Share Tech Mono',monospace;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;color:var(--text-dim);}
+.login-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+
+/* ══ HEADER BAR ══ */
+#appHeader{background:var(--header-bg);border-bottom:1px solid rgba(34,211,238,0.08);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:40;box-shadow:0 2px 20px rgba(0,0,0,0.4);}
+.header-brand{display:flex;align-items:center;gap:12px;}
+.header-brand-logo{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--cyan);letter-spacing:4px;text-shadow:0 0 14px rgba(34,211,238,0.45);}
+.header-divider{width:1px;height:24px;background:linear-gradient(180deg,transparent,rgba(34,211,238,0.25),transparent);}
+.header-title{font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,0.6);text-transform:uppercase;}
+.header-subtitle{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:16px;}
+.header-clock{text-align:right;}
+.header-clock-time{font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;color:var(--cyan);letter-spacing:2px;text-shadow:0 0 10px rgba(34,211,238,0.35);}
+.header-clock-date{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:1px;}
+.header-user{display:flex;align-items:center;gap:10px;padding:6px 14px;border-radius:10px;background:rgba(34,211,238,0.04);border:1px solid rgba(34,211,238,0.1);cursor:pointer;transition:all 0.2s;}
+.header-user:hover{background:rgba(34,211,238,0.07);border-color:rgba(34,211,238,0.18);}
+.header-user-name{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:white;letter-spacing:1px;}
+.header-user-role{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(255,255,255,0.4);letter-spacing:2px;margin-top:1px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 8px var(--emerald);animation:pulse-emerald 2s infinite;flex-shrink:0;}
+
+/* ══ SETTINGS ══ */
+.settings-section{background:var(--glass-bg);border:1px solid var(--card-border);border-radius:14px;padding:24px;position:relative;overflow:hidden;}
+.settings-section::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(34,211,238,0.18),transparent);}
+.edit-mode-card{border-radius:16px;padding:28px 24px;text-align:center;position:relative;overflow:hidden;transition:all 0.5s ease;}
+.edit-mode-card.admin-auto{background:linear-gradient(145deg,#071818,#071020);border:1px solid rgba(34,211,238,0.25);box-shadow:0 0 0 1px rgba(34,211,238,0.06),0 8px 40px rgba(0,0,0,0.5),0 0 60px rgba(34,211,238,0.05);}
+.edit-mode-card.locked{background:linear-gradient(145deg,#130a10,#0a0a18);border:1px solid rgba(244,63,94,0.22);}
+.edit-mode-card.unlocked{background:linear-gradient(145deg,#071810,#080f18);border:1px solid rgba(16,185,129,0.22);}
+[data-theme="light"] .edit-mode-card.admin-auto{background:linear-gradient(145deg,#dff4f7,#e8f5f8);border:1px solid rgba(8,145,178,0.35);}
+[data-theme="light"] .edit-mode-card.locked{background:linear-gradient(145deg,#fde8ed,#faeef2);border:1px solid rgba(225,29,72,0.3);}
+[data-theme="light"] .edit-mode-card.unlocked{background:linear-gradient(145deg,#d8f5ed,#e6f8f3);border:1px solid rgba(5,150,105,0.3);}
+.big-toggle{width:72px;height:36px;border-radius:18px;position:relative;cursor:pointer;transition:all 0.4s ease;display:inline-flex;align-items:center;}
+.big-toggle.locked{background:rgba(244,63,94,0.09);border:2px solid rgba(244,63,94,0.32);}
+.big-toggle.unlocked{background:rgba(16,185,129,0.13);border:2px solid rgba(16,185,129,0.38);box-shadow:0 0 18px rgba(16,185,129,0.18);}
+.big-toggle-thumb{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;position:absolute;top:3px;transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 2px 8px rgba(0,0,0,0.5);}
+.big-toggle.locked .big-toggle-thumb{left:3px;background:var(--rose);box-shadow:0 2px 10px rgba(244,63,94,0.45);}
+.big-toggle.unlocked .big-toggle-thumb{left:calc(100% - 29px);background:var(--emerald);box-shadow:0 2px 10px rgba(16,185,129,0.45);}
+.quick-action-btn{width:100%;text-align:left;padding:11px 13px;border-radius:11px;display:flex;align-items:center;gap:11px;cursor:pointer;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;font-family:'Exo 2',sans-serif;transition:all 0.2s;letter-spacing:0.5px;}
+.quick-action-btn:hover{border-color:rgba(34,211,238,0.18);}
+.quick-action-btn .icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+.bar-track{background:rgba(22,45,74,0.3);border-radius:4px;overflow:hidden;height:5px;}
+[data-theme="light"] .bar-track{background:rgba(8,145,178,0.1);}
+.bar-fill{background:linear-gradient(90deg,var(--cyan-dim),var(--cyan));height:100%;border-radius:4px;transition:width 0.5s ease;}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-online{background:var(--emerald);box-shadow:0 0 7px var(--emerald);}
+.dot-onsite{background:var(--amber);box-shadow:0 0 7px var(--amber);}
+.dot-offline{background:#2d4a6b;}
+[data-theme="light"] .dot-offline{background:#9ab5cc;}
+.swal-input-custom{background:#040a14!important;color:white!important;border:1px solid #162d4a!important;border-radius:8px!important;font-family:'Exo 2',sans-serif!important;font-size:12px!important;}
+.swal-input-custom:focus{border-color:#0891b2!important;box-shadow:0 0 0 3px rgba(8,145,178,0.08)!important;}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:20px 0;}
+
+/* ══ RIGHT PANEL ══ */
+#rightPanel{width:240px;flex-shrink:0;height:100%;overflow-y:auto;background:rgba(4,10,20,0.25);border-left:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:20px;}
+[data-theme="light"] #rightPanel{background:rgba(200,216,232,0.2);}
+
+/* ══ STOCKS ══ */
+.stock-item{background:var(--input-bg);border:1px solid var(--border);border-radius:9px;padding:9px 11px;display:flex;align-items:center;gap:9px;transition:border-color 0.2s;position:relative;}
+.stock-item:hover{border-color:rgba(34,211,238,0.18);}
+.stock-bar-track{flex:1;height:3px;background:rgba(22,45,74,0.5);border-radius:4px;overflow:hidden;}
+[data-theme="light"] .stock-bar-track{background:rgba(8,145,178,0.12);}
+.stock-bar-fill{height:100%;border-radius:4px;transition:width 0.5s ease;}
+.ring-spinner{position:absolute;inset:0;border-radius:50%;border:6px solid transparent;border-top-color:var(--emerald);animation:spin 3s linear infinite;}
+
+/* ══ SP/DS SPLIT ══ */
+.sp-ds-split{display:grid;grid-template-columns:1fr 1fr;gap:0;position:relative;}
+.sp-ds-divider{position:absolute;left:50%;top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,rgba(34,211,238,0.4) 20%,rgba(34,211,238,0.7) 50%,rgba(34,211,238,0.4) 80%,transparent);box-shadow:0 0 8px rgba(34,211,238,0.3);transform:translateX(-50%);pointer-events:none;z-index:5;}
+.sp-column{padding-right:16px;}
+.ds-column{padding-left:16px;}
+.sp-section-header,.ds-section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.section-badge-sp{font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;color:var(--cyan);letter-spacing:3px;padding:4px 12px;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.18);border-radius:7px;}
+.section-badge-ds{font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;color:var(--amber);letter-spacing:3px;padding:4px 12px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18);border-radius:7px;}
+.count-pill-sp{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;color:var(--cyan);}
+.count-pill-ds{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;color:var(--amber);}
+.anim-dot-sp{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 7px var(--cyan);animation:pulse-cyan 2s infinite;flex-shrink:0;}
+.anim-dot-ds{width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 7px var(--amber);animation:pulse-amber 2s infinite;flex-shrink:0;}
+
+/* ══ STATUS TABS ══ */
+.status-tabs{display:flex;gap:0;margin-bottom:18px;border-radius:11px;overflow:hidden;border:1px solid var(--border);}
+.status-tab{flex:1;padding:11px 8px;font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;cursor:pointer;border:none;transition:all 0.22s;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:7px;background:var(--input-bg);color:var(--text-dim);}
+.status-tab:last-child{border-right:none;}
+
+/* ══ SEARCH BAR ══ */
+.search-bar-wrap{position:relative;max-width:300px;}
+.search-bar-input{background:var(--input-bg);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Exo 2',sans-serif;padding:9px 12px 9px 34px;font-size:11px;outline:none;width:100%;transition:border-color 0.2s,box-shadow 0.2s;}
+.search-bar-input:focus{border-color:var(--cyan-dim);box-shadow:0 0 0 3px rgba(8,145,178,0.08);}
+.search-bar-input::placeholder{color:var(--text-dim);}
+.search-bar-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text-dim);pointer-events:none;}
+
+/* ══ NODES TABLE ══ */
+.nodes-table{width:100%;border-collapse:collapse;}
+.nodes-table th{background:var(--table-header-bg);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--nodes-th-color);padding:11px 14px;border-bottom:1px solid var(--nodes-th-border);text-transform:uppercase;text-align:left;}
+.nodes-table td{padding:11px 14px;border-bottom:1px solid rgba(22,45,74,0.35);font-size:11px;vertical-align:middle;color:var(--text);}
+[data-theme="light"] .nodes-table td{border-bottom:1px solid rgba(200,216,232,0.5);}
+.nodes-table tr:last-child td{border-bottom:none;}
+.nodes-table tr:hover td{background:rgba(34,211,238,0.015);}
+
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes popIn{from{opacity:0;transform:scale(0.93) translateY(5px);}to{opacity:1;transform:scale(1) translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes pulse-cyan{0%,100%{box-shadow:0 0 5px rgba(34,211,238,0.4);}50%{box-shadow:0 0 14px rgba(34,211,238,0.8);}}
+@keyframes pulse-emerald{0%,100%{box-shadow:0 0 5px rgba(16,185,129,0.4);}50%{box-shadow:0 0 14px rgba(16,185,129,0.8);}}
+@keyframes pulse-amber{0%,100%{box-shadow:0 0 5px rgba(245,158,11,0.4);}50%{box-shadow:0 0 14px rgba(245,158,11,0.8);}}
+.animate-in{animation:fadeSlideIn 0.35s ease-out;}
+.pop-in{animation:popIn 0.28s ease-out;}
+
+[data-theme="light"] .login-card{box-shadow:0 32px 80px rgba(0,0,0,0.1),inset 0 1px 0 rgba(255,255,255,0.8);}
+[data-theme="light"] .settings-section::before{background:linear-gradient(90deg,transparent,rgba(8,145,178,0.18),transparent);}
+[data-theme="light"] .nodes-table th{color:var(--cyan);border-bottom:1px solid rgba(8,145,178,0.25);}
+[data-theme="light"] .sidebar-logo{text-shadow:0 0 16px rgba(8,145,178,0.3);}
+[data-theme="light"] .user-badge{background:rgba(8,145,178,0.08);border:1px solid rgba(8,145,178,0.2);}
+[data-theme="light"] .sp-ds-divider{background:linear-gradient(180deg,transparent,rgba(8,145,178,0.4) 20%,rgba(8,145,178,0.7) 50%,rgba(8,145,178,0.4) 80%,transparent);}
+[data-theme="light"] .live-dot{box-shadow:0 0 8px var(--emerald);}
+</style>
+</head>
+<body>
+
+<!-- SYNC INDICATOR -->
+<div id="syncIndicator">
+  <span id="syncDot" style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>
+  <span id="syncText">SYNCED</span>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div style="position:relative;z-index:1;padding:16px;width:100%;max-width:400px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:46px;font-weight:700;color:var(--cyan);letter-spacing:5px;text-shadow:0 0 24px rgba(34,211,238,0.5),0 0 48px rgba(34,211,238,0.2);">ISS</div>
+      <h2 style="color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:4px;font-weight:600;margin-top:4px;">BANK TERMINAL CABLE REQUEST MONITORING</h2>
+      <p class="section-label" style="margin-top:6px;letter-spacing:4px;">SECURE TERMINAL v7.0</p>
+    </div>
+    <div class="login-card">
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;">
+        <div class="login-tab active" id="tab-login" onclick="switchLoginTab('login')">LOGIN</div>
+        <div class="login-tab" id="tab-register" onclick="switchLoginTab('register')">REGISTER</div>
+      </div>
+      <div id="loginForm" style="display:flex;flex-direction:column;gap:14px;">
+        <div><p class="section-label" style="margin-bottom:6px;">User Account</p><input id="loginUser" type="text" placeholder="e.g. ISS or CE76" class="form-input"></div>
+        <div><p class="section-label" style="margin-bottom:6px;">Security Password</p><input id="loginPass" type="password" placeholder="••••••••" class="form-input" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <p id="loginError" style="display:none;color:var(--rose);font-size:9px;font-family:'Share Tech Mono',monospace;text-align:center;">⚠ Invalid credentials. Access denied.</p>
+        <button onclick="doLogin()" class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;"><i class="fa-solid fa-shield-halved" style="margin-right:7px;"></i>AUTHENTICATE SESSION</button>
+      </div>
+      <div id="registerForm" style="display:none;flex-direction:column;gap:14px;">
+        <div><p class="section-label" style="margin-bottom:6px;">New User Account</p><input id="regUser" type="text" placeholder="e.g. CE80" class="form-input"></div>
+        <div><p class="section-label" style="margin-bottom:6px;">Full Name</p><input id="regName" type="text" placeholder="e.g. Juan Dela Cruz" class="form-input"></div>
+        <div><p class="section-label" style="margin-bottom:6px;">Role</p><select id="regRole" class="form-input"><option value="Staff">Staff</option><option value="Technician">Technician</option></select></div>
+        <div><p class="section-label" style="margin-bottom:6px;">Password</p><input id="regPass" type="password" placeholder="Min. 4 characters" class="form-input"></div>
+        <div><p class="section-label" style="margin-bottom:6px;">Admin Key (Required)</p><input id="regAdminKey" type="password" placeholder="Enter admin passkey" class="form-input"></div>
+        <p id="registerError" style="display:none;color:var(--rose);font-size:9px;font-family:'Share Tech Mono',monospace;text-align:center;"></p>
+        <button onclick="doRegister()" class="btn-primary" style="width:100%;justify-content:center;"><i class="fa-solid fa-user-plus" style="margin-right:7px;"></i>REGISTER NODE</button>
+      </div>
+    </div>
+    <p class="section-label" style="text-align:center;margin-top:14px;letter-spacing:3px;color:var(--text-dim);">GHL Terminal Change Cable Management System</p>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="appShell" style="display:none;flex-direction:column;height:100vh;position:relative;z-index:1;">
+  <!-- HEADER -->
+  <div id="appHeader">
+    <div class="header-brand">
+      <div class="header-brand-logo">ISS</div>
+      <div class="header-divider"></div>
+      <div>
+        <div class="header-title">Bank Terminal Cable Request Monitoring</div>
+        <div class="header-subtitle">ISS CABLE MANAGEMENT SYSTEM v7.0</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button id="headerNewReqBtn" onclick="guardedAddRequest()" class="btn-primary" style="gap:6px;">
+        <i class="fa-solid fa-plus"></i><span>NEW REQUEST</span>
+      </button>
+      <div class="header-divider"></div>
+      <div class="header-clock">
+        <div id="headerTime" class="header-clock-time">00:00:00</div>
+        <div id="headerDate" class="header-clock-date">MON, JAN 01 2026</div>
+      </div>
+      <div class="header-divider"></div>
+      <div class="header-user" onclick="showPage('settings')">
+        <div id="headerAvatar" class="avatar" style="width:32px;height:32px;font-size:11px;"></div>
+        <div>
+          <div id="headerUserName" class="header-user-name">—</div>
+          <div id="headerUserRole" class="header-user-role">OPERATOR</div>
+        </div>
+        <div class="live-dot" title="Online"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODE BANNER -->
+  <div id="modeBanner" class="locked">
+    <i id="bannerIcon" class="fa-solid fa-lock" style="font-size:10px;"></i>
+    <span id="bannerText">EDIT MODE DISABLED — GO TO SETTINGS TO ENABLE</span>
+  </div>
+
+  <div id="appWrapper">
+    <!-- SIDEBAR (desktop only) -->
+    <aside id="sidebar">
+      <div class="sidebar-logo">
+        <span class="sidebar-logo-abbr">ISS</span>
+        <span class="sidebar-logo-text">INFORMATION<br>SYSTEM<br>SERVICES</span>
+      </div>
+      <div id="nav-dashboard" class="nav-btn active" onclick="showPage('dashboard')"><i class="fa-solid fa-gauge-high"></i><span class="nav-label">Dashboard</span><span class="nav-tooltip">Dashboard</span></div>
+      <div id="nav-reports" class="nav-btn" onclick="showPage('reports')"><i class="fa-solid fa-chart-bar"></i><span class="nav-label">Reports</span><span class="nav-tooltip">Reports</span></div>
+      <div id="nav-team" class="nav-btn" onclick="showPage('team')"><i class="fa-solid fa-users"></i><span class="nav-label">Team</span><span class="nav-tooltip">Team</span></div>
+      <div id="nav-counters" class="nav-btn" onclick="showPage('counters')"><i class="fa-solid fa-cash-register"></i><span class="nav-label">Counters</span><span class="nav-tooltip">Counter Inventory</span></div>
+      <div id="nav-nodes" class="nav-btn" onclick="showPage('nodes')"><i class="fa-solid fa-network-wired"></i><span class="nav-label">Nodes</span><span class="nav-tooltip">Active Nodes</span></div>
+      <div id="nav-settings" class="nav-btn" onclick="showPage('settings')"><i class="fa-solid fa-gear"></i><span class="nav-label">Settings</span><span class="nav-tooltip">Settings</span></div>
+      <div class="sidebar-spacer"></div>
+      <div class="nav-btn" onclick="toggleTheme()" style="margin-bottom:6px;"><i id="themeIcon" class="fa-solid fa-moon"></i><span class="nav-label">Theme</span><span class="nav-tooltip">Toggle Theme</span></div>
+      <div id="editModeIndicator" class="nav-btn" onclick="showPage('settings')" style="margin-bottom:4px;"><i id="editIndicatorIcon" class="fa-solid fa-lock" style="color:var(--rose);"></i></div>
+    </aside>
+
+    <div id="mainContent">
+
+      <!-- ══ DASHBOARD ══ -->
+      <div id="dashboardView" class="page-view active">
+        <div style="display:flex;flex:1;overflow:hidden;">
+          <div style="flex:1;overflow-y:auto;padding:24px;">
+            <div style="max-width:1100px;margin:0 auto;">
+              <div id="dashStatGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;" class="animate-in">
+                <div class="stat-card cyan"><p class="section-label" style="margin-bottom:5px;">Total Requests</p><p id="stat-total" style="font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;color:var(--text);">0</p><i class="fa-solid fa-clipboard-list" style="position:absolute;right:-4px;bottom:-4px;font-size:42px;color:rgba(34,211,238,0.04);"></i></div>
+                <div class="stat-card emerald"><p class="section-label" style="margin-bottom:5px;">Completed</p><p id="stat-completed" style="font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;color:var(--emerald);">0</p><i class="fa-solid fa-circle-check" style="position:absolute;right:-4px;bottom:-4px;font-size:42px;color:rgba(16,185,129,0.04);"></i></div>
+                <div class="stat-card amber"><p class="section-label" style="margin-bottom:5px;">Pending</p><p id="stat-pending" style="font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;color:var(--amber);">0</p><i class="fa-solid fa-clock" style="position:absolute;right:-4px;bottom:-4px;font-size:42px;color:rgba(245,158,11,0.04);"></i></div>
+                <div class="stat-card rose"><p class="section-label" style="margin-bottom:5px;">Reported</p><p id="stat-reported" style="font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;color:var(--rose);">0</p><i class="fa-solid fa-circle-exclamation" style="position:absolute;right:-4px;bottom:-4px;font-size:42px;color:rgba(244,63,94,0.04);"></i></div>
+              </div>
+              <div class="glass-card" style="padding:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:8px;">
+                  <div><p class="section-label" style="margin-bottom:3px;">Cable Request Analytics</p><h2 style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--text);letter-spacing:2px;">MONTHLY OVERVIEW — AUTO GENERATED</h2></div>
+                  <button onclick="exportReport()" class="btn-secondary" style="gap:6px;"><i class="fa-solid fa-file-export"></i>Export</button>
+                </div>
+                <div id="monthsContainer" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                  <div id="emptyState" style="grid-column:1/-1;text-align:center;padding:44px 20px;"><i class="fa-solid fa-calendar-days" style="font-size:40px;color:rgba(34,211,238,0.07);margin-bottom:12px;display:block;"></i><p style="font-size:12px;color:var(--text-dim);">No requests yet. Click <b style="color:var(--cyan);">+ NEW REQUEST</b> to begin.</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- RIGHT PANEL -->
+          <div id="rightPanel">
+            <div>
+              <p class="section-label" style="margin-bottom:10px;">Quick Actions</p>
+              <div style="display:flex;flex-direction:column;gap:7px;">
+                <button class="quick-action-btn" onclick="viewAllRequests()"><div class="icon" style="background:rgba(34,211,238,0.07);"><i class="fa-solid fa-list-check" style="color:var(--cyan);font-size:11px;"></i></div>View All Requests</button>
+                <button class="quick-action-btn" onclick="openFollowUpTracker()"><div class="icon" style="background:rgba(245,158,11,0.07);"><i class="fa-solid fa-forward" style="color:var(--amber);font-size:11px;"></i></div>Process Pending</button>
+                <button class="quick-action-btn" onclick="generateMonthlySummary()"><div class="icon" style="background:rgba(16,185,129,0.07);"><i class="fa-solid fa-chart-line" style="color:var(--emerald);font-size:11px;"></i></div>Monthly Summary</button>
+              </div>
+            </div>
+            <div>
+              <p class="section-label" style="margin-bottom:10px;">Terminal Status</p>
+              <div style="display:flex;justify-content:center;padding:6px 0;">
+                <div onclick="openTerminalStatusModal()" style="position:relative;width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(10,22,38,0.8);border:6px solid var(--bg-card);">
+                  <div class="ring-spinner"></div>
+                  <div style="text-align:center;position:relative;z-index:1;"><span id="active-percentage" style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--text);">100%</span><p class="section-label" style="font-size:6px;margin-top:1px;">ACTIVE</p></div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px;">
+                <div style="display:flex;align-items:center;gap:7px;font-size:10px;"><span class="status-dot dot-online"></span><span id="active-label" style="color:var(--text-mid);">100% Active</span></div>
+                <div style="display:flex;align-items:center;gap:7px;font-size:10px;"><span class="status-dot dot-onsite"></span><span id="maintenance-label" style="color:var(--text-mid);">0% Maintenance</span></div>
+                <div style="display:flex;align-items:center;gap:7px;font-size:10px;"><span class="status-dot dot-offline"></span><span id="offline-label" style="color:var(--text-mid);">0% Offline</span></div>
+              </div>
+            </div>
+            <div>
+              <p class="section-label" style="margin-bottom:10px;">Urgent Alerts</p>
+              <div id="urgentAlertsBox" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.18);border-radius:11px;padding:12px;"><p style="font-size:10px;color:rgba(16,185,129,0.8);font-weight:600;">No urgent alerts.</p></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <p class="section-label">Stocks Left</p>
+                <button onclick="openAddStockModal()" style="background:rgba(34,211,238,0.05);border:1px solid rgba(34,211,238,0.14);border-radius:6px;padding:3px 9px;color:var(--cyan);cursor:pointer;font-size:8px;font-weight:700;font-family:'Share Tech Mono',monospace;letter-spacing:1px;"><i class="fa-solid fa-plus" style="margin-right:2px;"></i>ADD</button>
+              </div>
+              <div id="stocksList" style="display:flex;flex-direction:column;gap:7px;"><p style="font-size:10px;color:var(--text-dim);font-style:italic;text-align:center;padding:10px 0;">No stock items yet.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ MONTH DETAILS ══ -->
+      <div id="monthDetailsView" class="page-view">
+        <div style="flex:1;overflow-y:auto;padding:24px;">
+          <div style="max-width:1400px;margin:0 auto;" class="animate-in">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+              <div><p class="section-label" style="margin-bottom:4px;">Detailed Report</p><h1 id="monthTitle" class="page-title"></h1></div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <div class="search-bar-wrap"><i class="fa-solid fa-search search-bar-icon"></i><input id="monthSearchInput" oninput="renderMonthTable(currentMonth)" type="text" placeholder="Search..." class="search-bar-input"></div>
+                <button onclick="if(document.getElementById('monthSearchInput'))document.getElementById('monthSearchInput').value='';renderMonthTable(currentMonth);" class="btn-secondary" style="gap:5px;padding:8px 12px;"><i class="fa-solid fa-rotate-left"></i></button>
+                <button onclick="exportMonthReport()" class="btn-secondary" style="gap:6px;"><i class="fa-solid fa-file-export"></i>Export</button>
+                <button onclick="goBackDashboard()" class="btn-secondary" style="gap:6px;"><i class="fa-solid fa-arrow-left"></i>Back</button>
+              </div>
+            </div>
+            <div id="monthSummaryPills" style="margin-bottom:16px;"></div>
+            <div class="status-tabs">
+              <button onclick="setStatusTab('REPORTED')" id="stab-reported" class="status-tab"><span style="width:7px;height:7px;border-radius:50%;background:var(--rose);flex-shrink:0;"></span>REPORTED <span id="stab-reported-count" style="margin-left:3px;padding:1px 6px;border-radius:9px;font-size:8px;">0</span></button>
+              <button onclick="setStatusTab('PENDING')" id="stab-pending" class="status-tab"><span style="width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;"></span>PENDING <span id="stab-pending-count" style="margin-left:3px;padding:1px 6px;border-radius:9px;font-size:8px;">0</span></button>
+              <button onclick="setStatusTab('DONE')" id="stab-done" class="status-tab"><span style="width:7px;height:7px;border-radius:50%;background:var(--emerald);flex-shrink:0;"></span>DONE <span id="stab-done-count" style="margin-left:3px;padding:1px 6px;border-radius:9px;font-size:8px;">0</span></button>
+            </div>
+            <div class="glass-card" style="padding:20px;margin-bottom:16px;overflow:hidden;">
+              <div class="sp-ds-split" id="spDsSplitContainer">
+                <div class="sp-column">
+                  <div class="sp-section-header"><div class="anim-dot-sp"></div><span class="section-badge-sp">⬡ SP COUNTERS</span><span id="spCountPill" class="count-pill-sp">0</span></div>
+                  <div style="overflow-x:auto;max-height:520px;overflow-y:auto;"><table class="data-table" style="min-width:480px;"><thead><tr><th>Date</th><th>Counter</th><th>Serial No.</th><th>Requested By</th><th>Remarks</th><th>Move To</th><th>Done Date</th><th>Edit</th></tr></thead><tbody id="spTableBody"></tbody></table></div>
+                </div>
+                <div class="sp-ds-divider"></div>
+                <div class="ds-column">
+                  <div class="ds-section-header"><div class="anim-dot-ds"></div><span class="section-badge-ds">⬡ DS COUNTERS</span><span id="dsCountPill" class="count-pill-ds">0</span></div>
+                  <div style="overflow-x:auto;max-height:520px;overflow-y:auto;"><table class="data-table" style="min-width:480px;"><thead><tr><th>Date</th><th>Counter</th><th>Serial No.</th><th>Requested By</th><th>Remarks</th><th>Move To</th><th>Done Date</th><th>Edit</th></tr></thead><tbody id="dsTableBody"></tbody></table></div>
+                </div>
+              </div>
+            </div>
+            <div id="monthEmptyState" style="display:none;text-align:center;padding:50px 20px;"><i class="fa-solid fa-inbox" style="font-size:44px;color:rgba(34,211,238,0.07);margin-bottom:12px;display:block;"></i><p id="monthEmptyText" style="font-size:12px;color:var(--text-dim);">No records in this status.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ REPORTS ══ -->
+      <div id="reportsView" class="page-view">
+        <div style="flex:1;overflow-y:auto;padding:24px;">
+          <div style="max-width:960px;margin:0 auto;" class="animate-in">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;flex-wrap:wrap;gap:10px;">
+              <div><p class="section-label" style="margin-bottom:4px;">System Analytics & Performance</p><h1 class="page-title">REPORTS</h1></div>
+              <button onclick="exportReport()" class="btn-primary" style="gap:6px;"><i class="fa-solid fa-file-export"></i>Export Excel</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
+              <div class="stat-card cyan"><p class="section-label" style="margin-bottom:5px;">Total</p><p id="rpt-total" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--text);">0</p></div>
+              <div class="stat-card emerald"><p class="section-label" style="margin-bottom:5px;">Completed</p><p id="rpt-done" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--emerald);">0</p><p id="rpt-done-pct" style="font-size:9px;color:rgba(16,185,129,0.55);margin-top:3px;">0% rate</p></div>
+              <div class="stat-card amber"><p class="section-label" style="margin-bottom:5px;">Pending</p><p id="rpt-pending" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--amber);">0</p><p id="rpt-pending-pct" style="font-size:9px;color:rgba(245,158,11,0.55);margin-top:3px;">0% rate</p></div>
+              <div class="stat-card rose"><p class="section-label" style="margin-bottom:5px;">Reported</p><p id="rpt-reported" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--rose);">0</p><p id="rpt-reported-pct" style="font-size:9px;color:rgba(244,63,94,0.55);margin-top:3px;">0% rate</p></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+              <div class="glass-card" style="padding:20px;"><p class="section-label" style="margin-bottom:3px;">Monthly Distribution</p><h3 style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:2px;">MONTHLY BREAKDOWN</h3><div id="rpt-monthly-bars" style="display:flex;flex-direction:column;gap:12px;"><p style="font-size:10px;color:var(--text-dim);font-style:italic;">No data yet.</p></div></div>
+              <div class="glass-card" style="padding:20px;"><p class="section-label" style="margin-bottom:3px;">Equipment Classification</p><h3 style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:2px;">TERMINAL TYPE SPLIT</h3><div id="rpt-type-split" style="display:flex;flex-direction:column;gap:12px;"><p style="font-size:10px;color:var(--text-dim);font-style:italic;">No data yet.</p></div></div>
+            </div>
+            <div class="glass-card" style="padding:20px;margin-bottom:14px;"><p class="section-label" style="margin-bottom:3px;">Operator Activity</p><h3 style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:2px;">REQUESTS PER OPERATOR</h3><div id="rpt-user-breakdown" style="display:flex;flex-direction:column;gap:12px;"><p style="font-size:10px;color:var(--text-dim);font-style:italic;">No data yet.</p></div></div>
+            <div class="glass-card" style="padding:20px;margin-bottom:14px;"><p class="section-label" style="margin-bottom:3px;">Equipment Frequency</p><h3 style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:2px;">TOP COUNTERS WITH MOST REQUESTS</h3><div id="rpt-top-counters" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;"><p style="font-size:10px;color:var(--text-dim);font-style:italic;">No data yet.</p></div></div>
+            <div class="glass-card" style="padding:20px;"><p class="section-label" style="margin-bottom:3px;">Overdue Analysis</p><h3 style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:2px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-triangle-exclamation" style="color:var(--rose);"></i>LONG PENDING REQUESTS (≥3 DAYS)</h3><div id="rpt-long-pending"><p style="font-size:10px;color:var(--text-dim);font-style:italic;">No long pending requests.</p></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TEAM ══ -->
+      <div id="teamView" class="page-view">
+        <div style="flex:1;overflow-y:auto;padding:24px;">
+          <div style="max-width:960px;margin:0 auto;" class="animate-in">
+            <div style="margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+              <div><p class="section-label" style="margin-bottom:4px;">Staff Directory & Account Management</p><h1 class="page-title">TEAM MANAGEMENT</h1></div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <div class="search-bar-wrap"><i class="fa-solid fa-search search-bar-icon"></i><input id="teamSearchInput" oninput="renderTeamPage()" type="text" placeholder="Search account..." class="search-bar-input" style="width:190px;"></div>
+                <button id="addMemberBtn" onclick="openAddTeamMember()" class="btn-primary" style="gap:6px;"><i class="fa-solid fa-user-plus"></i>Add Member</button>
+              </div>
+            </div>
+            <div id="teamAdminNotice" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:10px;background:rgba(244,63,94,0.07);border:1px solid rgba(244,63,94,0.2);"><p style="font-size:10px;color:var(--rose);font-family:'Share Tech Mono',monospace;font-weight:700;letter-spacing:1px;"><i class="fa-solid fa-lock" style="margin-right:6px;"></i>ADMINISTRATOR ACCESS REQUIRED TO MANAGE ACCOUNTS</p></div>
+            <div class="glass-card" style="overflow:hidden;"><div style="overflow-x:auto;"><table class="nodes-table" style="min-width:680px;"><thead><tr><th style="width:38px;"></th><th>Network Node Username</th><th>Display Name</th><th>System Profile Level</th><th style="text-align:right;">Administrative Actions</th></tr></thead><tbody id="teamTableBody"></tbody></table></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ COUNTERS ══ -->
+      <div id="countersView" class="page-view">
+        <div style="flex:1;overflow-y:auto;padding:24px;">
+          <div style="max-width:1100px;margin:0 auto;overflow:visible;" class="animate-in">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;flex-wrap:wrap;gap:10px;">
+              <div><p class="section-label" style="margin-bottom:4px;">Hardware Inventory</p><h1 class="page-title">COUNTER INVENTORY</h1></div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <div style="display:flex;gap:3px;background:var(--input-bg);border:1px solid var(--border);border-radius:9px;padding:3px;">
+                  <button onclick="setCounterFilter('ALL')" id="cf-all" style="padding:4px 12px;font-size:9px;font-weight:700;letter-spacing:1px;font-family:'Share Tech Mono',monospace;border-radius:7px;border:none;cursor:pointer;background:rgba(34,211,238,0.1);color:var(--cyan);transition:all 0.2s;">ALL</button>
+                  <button onclick="setCounterFilter('SP')" id="cf-sp" style="padding:4px 12px;font-size:9px;font-weight:700;letter-spacing:1px;font-family:'Share Tech Mono',monospace;border-radius:7px;border:none;cursor:pointer;background:transparent;color:var(--text-dim);transition:all 0.2s;">SP</button>
+                  <button onclick="setCounterFilter('DS')" id="cf-ds" style="padding:4px 12px;font-size:9px;font-weight:700;letter-spacing:1px;font-family:'Share Tech Mono',monospace;border-radius:7px;border:none;cursor:pointer;background:transparent;color:var(--text-dim);transition:all 0.2s;">DS</button>
+                </div>
+                <div class="search-bar-wrap"><i class="fa-solid fa-search search-bar-icon"></i><input id="counterSearch" oninput="renderCountersPage()" type="text" placeholder="Search counter..." class="search-bar-input" style="width:170px;"></div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
+              <div class="stat-card cyan"><p class="section-label" style="margin-bottom:5px;">Total Counters</p><p id="cnt-total" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--text);">0</p></div>
+              <div class="stat-card emerald"><p class="section-label" style="margin-bottom:5px;">Replaced Units</p><p id="cnt-replaced" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--emerald);">0</p></div>
+              <div class="stat-card amber"><p class="section-label" style="margin-bottom:5px;">Original Units</p><p id="cnt-original" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--amber);">0</p></div>
+            </div>
+            <div id="cnt-sp-section"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="height:1px;flex:1;background:linear-gradient(90deg,rgba(34,211,238,0.3),transparent);"></div><span class="section-badge-sp">SP COUNTERS</span><div style="height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(34,211,238,0.3));"></div></div><div id="cnt-sp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:9px;margin-bottom:22px;"></div></div>
+            <div id="cnt-ds-section"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="height:1px;flex:1;background:linear-gradient(90deg,rgba(245,158,11,0.3),transparent);"></div><span class="section-badge-ds">DS COUNTERS</span><div style="height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(245,158,11,0.3));"></div></div><div id="cnt-ds-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:9px;margin-bottom:22px;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ NODES ══ -->
+      <div id="nodesView" class="page-view">
+        <div style="flex:1;overflow-y:auto;padding:24px;">
+          <div style="max-width:960px;margin:0 auto;" class="animate-in">
+            <div style="margin-bottom:22px;"><p class="section-label" style="margin-bottom:4px;">Network Infrastructure</p><h1 class="page-title">ACTIVE INFRASTRUCTURE NODES</h1></div>
+            <div class="glass-card" style="overflow:hidden;"><div style="overflow-x:auto;"><table class="nodes-table"><thead><tr><th style="width:38px;"></th><th>Network Node Username</th><th>System Profile Level</th><th style="text-align:right;">Administrative Actions</th></tr></thead><tbody id="nodesTableBody"></tbody></table></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SETTINGS ══ -->
+      <div id="settingsView" class="page-view">
+        <div style="flex:1;overflow-y:auto;padding:24px 16px;">
+          <div style="max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:18px;padding-bottom:40px;" class="animate-in">
+            <div style="text-align:center;margin-bottom:2px;"><p class="section-label" style="margin-bottom:5px;">Account & System Configuration</p><h1 class="page-title">USER SETTINGS</h1></div>
+            <div id="editModeCard" class="edit-mode-card locked">
+              <div id="editGlowBg" style="position:absolute;inset:0;border-radius:16px;background:radial-gradient(ellipse at center,rgba(244,63,94,0.07) 0%,transparent 70%);pointer-events:none;transition:background 0.5s;"></div>
+              <p class="section-label" style="position:relative;z-index:1;margin-bottom:12px;">System Control</p>
+              <div id="editBigIcon" style="width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative;z-index:1;background:rgba(244,63,94,0.1);border:2px solid rgba(244,63,94,0.28);"><i id="editBigIconI" class="fa-solid fa-lock" style="font-size:24px;color:var(--rose);"></i></div>
+              <h2 id="editModeLabel" style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;color:var(--rose);margin-bottom:3px;position:relative;z-index:1;">EDIT MODE OFF</h2>
+              <p id="editModeDesc" style="font-size:10px;color:var(--text-dim);margin-bottom:20px;position:relative;z-index:1;">Enable to add requests and edit records.</p>
+              <div id="editToggleWrap" style="display:flex;align-items:center;justify-content:center;gap:14px;position:relative;z-index:1;">
+                <span id="labelOff" style="font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;color:var(--rose);letter-spacing:2px;">OFF</span>
+                <div id="bigToggle" class="big-toggle locked" onclick="toggleEditMode()"><div class="big-toggle-thumb"><i id="toggleThumbIcon" class="fa-solid fa-lock"></i></div></div>
+                <span id="labelOn" style="font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;color:var(--text-dim);letter-spacing:2px;">ON</span>
+              </div>
+              <div id="editStatusPill" style="margin-top:16px;display:inline-flex;align-items:center;gap:7px;padding:6px 16px;border-radius:40px;background:rgba(244,63,94,0.09);border:1px solid rgba(244,63,94,0.22);position:relative;z-index:1;">
+                <span id="editStatusDot" style="width:6px;height:6px;border-radius:50%;background:var(--rose);display:block;"></span>
+                <span id="editStatusText" style="font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;color:var(--rose);letter-spacing:2px;">LOCKED</span>
+              </div>
+            </div>
+            <div class="settings-section">
+              <p class="section-label" style="text-align:center;margin-bottom:16px;">Logged In As</p>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px;">
+                <div id="settings-avatar" class="avatar" style="width:56px;height:56px;font-size:16px;"></div>
+                <div style="text-align:center;"><p id="settings-username" style="color:var(--text);font-weight:700;font-size:15px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;"></p><p id="settings-role" class="section-label" style="margin-top:4px;"></p></div>
+              </div>
+              <div class="divider"></div>
+              <p class="section-label" style="margin-bottom:8px;">Edit Display Name</p>
+              <div style="display:flex;gap:8px;align-items:center;"><input id="editNameInput" type="text" placeholder="Your display name" class="form-input"><button onclick="saveDisplayName()" class="btn-primary" style="white-space:nowrap;">Save Name</button></div>
+              <div class="divider"></div>
+              <p class="section-label" style="margin-bottom:8px;">Change Password</p>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <input id="newPass" type="password" placeholder="New password" class="form-input">
+                <input id="confirmPass" type="password" placeholder="Confirm new password" class="form-input">
+                <button onclick="changePassword()" class="btn-primary" style="align-self:center;">Update Password</button>
+              </div>
+            </div>
+            <div id="adminUsersSection" class="settings-section" style="display:none;">
+              <p class="section-label" style="text-align:center;margin-bottom:5px;">System Administration</p>
+              <h3 style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:16px;text-align:center;letter-spacing:2px;">ALL SYSTEM USERS</h3>
+              <div style="overflow:hidden;border-radius:9px;border:1px solid var(--border);"><table class="data-table"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th style="text-align:center;">Reset</th><th style="text-align:center;">Delete</th></tr></thead><tbody id="adminUsersTable"></tbody></table></div>
+            </div>
+            <div class="settings-section">
+              <p class="section-label" style="margin-bottom:12px;">System Information</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+                <div style="background:var(--input-bg);border:1px solid var(--border);border-radius:9px;padding:12px;"><p class="section-label" style="margin-bottom:4px;">Version</p><p style="color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;">v7.0.0</p></div>
+                <div style="background:var(--input-bg);border:1px solid var(--border);border-radius:9px;padding:12px;"><p class="section-label" style="margin-bottom:4px;">Total Counters</p><p id="sys-counter-count" style="color:var(--emerald);font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;">0</p></div>
+                <div style="background:var(--input-bg);border:1px solid var(--border);border-radius:9px;padding:12px;"><p class="section-label" style="margin-bottom:4px;">Total Records</p><p id="sys-total-records" style="color:var(--text);font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;">0</p></div>
+                <div style="background:var(--input-bg);border:1px solid var(--border);border-radius:9px;padding:12px;"><p class="section-label" style="margin-bottom:4px;">Session User</p><p id="sys-session-user" style="color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;">—</p></div>
+              </div>
+              <div style="margin-top:12px;">
+                <button onclick="clearAllData()" class="btn-danger" style="width:100%;justify-content:center;gap:7px;"><i class="fa-solid fa-trash"></i>Clear All Data (Reset)</button>
+              </div>
+            </div>
+            <div style="text-align:center;"><button onclick="doLogout()" class="btn-danger" style="gap:7px;"><i class="fa-solid fa-right-from-bracket"></i>LOGOUT</button></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /mainContent -->
+  </div><!-- /appWrapper -->
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav id="mobileNav">
+    <button class="mob-nav-btn active" id="mob-dashboard" onclick="showPage('dashboard');setMobActive('dashboard')"><i class="fa-solid fa-gauge-high"></i>DASH</button>
+    <button class="mob-nav-btn" id="mob-reports" onclick="showPage('reports');setMobActive('reports')"><i class="fa-solid fa-chart-bar"></i>REPORTS</button>
+    <button class="mob-nav-btn" id="mob-add" onclick="guardedAddRequest()" style="color:var(--cyan);"><i class="fa-solid fa-plus-circle" style="font-size:22px;"></i>ADD</button>
+    <button class="mob-nav-btn" id="mob-counters" onclick="showPage('counters');setMobActive('counters')"><i class="fa-solid fa-cash-register"></i>COUNTERS</button>
+    <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobActive('settings')"><i class="fa-solid fa-gear"></i>SETTINGS</button>
+  </nav>
+
+</div><!-- /appShell -->
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════
+const ADMIN_REGISTRATION_KEY = 'smeagol';
+const SESSION_KEY = 'ntt_v7_session';
+
+// In-memory state (synced from Firebase)
+let users = { "ISS": { pass:"smeagol", name:"ISS Smeagol", role:"Admin" } };
+let teamMembers = [
+  {id:"CE76",name:"Jeff",status:"Online",role:"Staff",photo:null},
+  {id:"CE77",name:"Gelo",status:"Online",role:"Staff",photo:null},
+  {id:"CE78",name:"Des",status:"Online",role:"Staff",photo:null},
+  {id:"CE79",name:"Joey",status:"Online",role:"Staff",photo:null},
+];
+const monthsList=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const defaultSnMapping={
+  "SP-1A":"0823716676","SP-2A":"0821971676","SP-2B":"0823164348","SP-3A":"0821011294",
+  "SP-3B":"0823716680","SP-4A":"0822192337","SP-4B":"0821409671","SP-5A":"0821410218",
+  "SP-5B":"0822350908","SP-6A":"0821013269","SP-6B":"0821772234","SP-7A":"0821972017",
+  "SP-7B":"0822449799","SP-8A":"0822561804","SP-8B":"0821972095","SP-9A":"0821972329",
+  "SP-9B":"0821971978","SP-10A":"0823164343","SP-10B":"0821776859","SP-11A":"0823716695",
+  "SP-11B":"0823716696","SP-12A":"0823716697","SP-12B":"0823130795","SP-13A":"0823716699",
+  "SP-13B":"0822350906","SP-14A":"0823716701","SP-14B":"0823716867","SP-15A":"0823716703",
+  "SP-15B":"0823716704","SP-16A":"0823716705","SP-16B":"0823716706","SP-17A":"0823716707",
+  "SP-17B":"0823716708","SP-99A":"0823716709","DS-10A":"0821290887","DS-10D":"0823717177",
+  "DS-12A":"0823717178","DS-12B":"0823717179","DS-12D":"0823717011","DS-15A":"0823716713",
+  "DS-15B":"0823716714","DS-15D":"0822350694","DS-16A":"0823717181","DS-16D":"0821410514",
+  "DS-17A":"0823717183","DS-19A":"0823717184","DS-20D":"0823717185","DS-23A":"0823717186",
+  "DS-23D":"0821971992","DS-25A":"0823796784","DS-25B":"0823717118","DS-25D":"0821774689",
+  "DS-26D":"0823717192","DS-27A":"0821972446","DS-27D":"0821290907","DS-28D":"0823716736",
+  "DS-29A":"0823716737","DS-32A":"0821600705","DS-32D":"0823716739","DS-33A":"0823716740",
+  "DS-33D":"0823716741","DS-35A":"0823716742","DS-35D":"0823716743","DS-38A":"0821972292",
+  "DS-38D":"0823716745","DS-39A":"0823716746","DS-39B":"0821772237","DS-39D":"0822350440",
+  "DS-42A":"0821012836","DS-42D":"0823716750","DS-43A":"0823716751","DS-43D":"0823716752",
+  "DS-46A":"0823716753","DS-46D":"0823716754","DS-48A":"0823716755","DS-49A":"0822132685",
+  "DS-49B":"0821409894","DS-49D":"0821777114"
+};
+
+let counterInventory={};
+let reportsData={};
+let terminalOfflineStatus={};
+let lastFollowUpDates={};
+let currentUser=null;
+let editModeEnabled=false;
+let currentMonth=null;
+let currentMonthFilter='REPORTED';
+let currentCounterFilter='ALL';
+let shownAlerts={};
+let currentTheme='dark';
+let stocksData=[];
+
+// ═══════════════════════════════════════════════════
+// FIREBASE HELPERS
+// ═══════════════════════════════════════════════════
+let _fbInitialized = false;
+let _saveTimeout = null;
+let _isOnline = true;
+
+function showSyncIndicator(state, text) {
+  const el = document.getElementById('syncIndicator');
+  if (!el) return;
+  el.className = 'show ' + state;
+  document.getElementById('syncText').innerText = text;
+  if (state === 'saved') {
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => { el.className = ''; }, 2000);
+  }
+}
+
+async function fbSave(path, data) {
+  if (!window._fbReady) return;
+  try {
+    showSyncIndicator('saving','SYNCING…');
+    await window._fbSet(window._fbRef(window._fbDb, path), data);
+    showSyncIndicator('saved','SYNCED');
+  } catch(e) {
+    console.error('Firebase save error:', e);
+    showSyncIndicator('error','SYNC ERROR');
+  }
+}
+
+async function fbGet(path) {
+  if (!window._fbReady) return null;
+  try {
+    const snap = await window._fbGet(window._fbRef(window._fbDb, path));
+    return snap.exists() ? snap.val() : null;
+  } catch(e) {
+    console.error('Firebase get error:', e);
+    return null;
+  }
+}
+
+function fbListen(path, callback) {
+  if (!window._fbReady) return;
+  window._fbOnValue(window._fbRef(window._fbDb, path), (snap) => {
+    callback(snap.exists() ? snap.val() : null);
+  });
+}
+
+// Debounced save — batches rapid changes into one write
+function autoSave() {
+  clearTimeout(_saveTimeout);
+  _saveTimeout = setTimeout(() => { pushAllDataToFirebase(); }, 600);
+}
+
+async function pushAllDataToFirebase() {
+  if (!window._fbReady) { saveLocalBackup(); return; }
+  showSyncIndicator('saving','SYNCING…');
+  try {
+    await window._fbSet(window._fbRef(window._fbDb,'iss_app'), {
+      reportsData, terminalOfflineStatus, lastFollowUpDates, shownAlerts,
+      teamMembers, users, counterInventory, stocksData, timestamp: Date.now()
+    });
+    showSyncIndicator('saved','SYNCED');
+    saveLocalBackup();
+  } catch(e) {
+    showSyncIndicator('error','SYNC ERROR — Saved locally');
+    saveLocalBackup();
+  }
+}
+
+function saveLocalBackup() {
+  try {
+    localStorage.setItem('ntt_v7_backup', JSON.stringify({
+      reportsData, terminalOfflineStatus, lastFollowUpDates, shownAlerts,
+      teamMembers, users, counterInventory, stocksData, currentTheme, timestamp: Date.now()
+    }));
+  } catch(e){}
+}
+
+function loadLocalBackup() {
+  try {
+    const raw = localStorage.getItem('ntt_v7_backup');
+    if (!raw) return false;
+    const p = JSON.parse(raw);
+    if (p.reportsData) reportsData = p.reportsData;
+    if (p.terminalOfflineStatus) terminalOfflineStatus = p.terminalOfflineStatus;
+    if (p.lastFollowUpDates) lastFollowUpDates = p.lastFollowUpDates;
+    if (p.shownAlerts) shownAlerts = p.shownAlerts;
+    if (p.teamMembers) teamMembers = p.teamMembers;
+    if (p.users) Object.assign(users, p.users);
+    if (p.counterInventory) counterInventory = p.counterInventory;
+    if (p.currentTheme) currentTheme = p.currentTheme;
+    if (p.stocksData) stocksData = p.stocksData;
+    if (!users['ISS']) users['ISS'] = {pass:'smeagol',role:'Admin',name:'ISS Smeagol'};
+    return true;
+  } catch(e){ return false; }
+}
+
+function applyFirebaseData(data) {
+  if (!data) return;
+  if (data.reportsData) reportsData = data.reportsData;
+  if (data.terminalOfflineStatus) terminalOfflineStatus = data.terminalOfflineStatus;
+  if (data.lastFollowUpDates) lastFollowUpDates = data.lastFollowUpDates;
+  if (data.shownAlerts) shownAlerts = data.shownAlerts;
+  if (data.teamMembers) teamMembers = data.teamMembers;
+  if (data.users) { Object.assign(users, data.users); if (!users['ISS']) users['ISS']={pass:'smeagol',role:'Admin',name:'ISS Smeagol'}; }
+  if (data.counterInventory) counterInventory = data.counterInventory;
+  if (data.stocksData) stocksData = data.stocksData;
+  saveLocalBackup();
+}
+
+async function loadDataFromFirebase() {
+  if (!window._fbReady) { loadLocalBackup(); return; }
+  showSyncIndicator('saving','LOADING…');
+  const data = await fbGet('iss_app');
+  if (data) {
+    applyFirebaseData(data);
+    showSyncIndicator('saved','LOADED');
+  } else {
+    loadLocalBackup();
+    showSyncIndicator('saved','LOCAL DATA');
+  }
+}
+
+// Real-time listener — updates UI when another device makes a change
+function startRealtimeListener() {
+  if (!window._fbReady) return;
+  fbListen('iss_app', (data) => {
+    if (!data) return;
+    applyFirebaseData(data);
+    // Refresh UI if logged in
+    if (currentUser) {
+      rebuildMonthCards();
+      updateDashboardStats();
+      updateActivePercentage();
+      updateUrgentAlerts();
+      renderStocksPanel();
+      if (currentMonth) renderMonthTable(currentMonth);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// SESSION
+// ═══════════════════════════════════════════════════
+function saveSession(u){try{localStorage.setItem(SESSION_KEY,u);}catch(e){}}
+function loadSession(){try{return localStorage.getItem(SESSION_KEY);}catch(e){return null;}}
+function clearSession(){try{localStorage.removeItem(SESSION_KEY);}catch(e){}}
+
+// ═══════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════
+function updateClock(){
+  const now=new Date();
+  const days=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const h=String(now.getHours()).padStart(2,'0');
+  const m=String(now.getMinutes()).padStart(2,'0');
+  const s=String(now.getSeconds()).padStart(2,'0');
+  const t=document.getElementById('headerTime');
+  const d=document.getElementById('headerDate');
+  if(t)t.innerText=`${h}:${m}:${s}`;
+  if(d)d.innerText=`${days[now.getDay()]}, ${months[now.getMonth()]} ${String(now.getDate()).padStart(2,'0')} ${now.getFullYear()}`;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// ═══════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',currentTheme);
+  const icon=document.getElementById('themeIcon');
+  if(icon)icon.className=currentTheme==='dark'?'fa-solid fa-sun':'fa-solid fa-moon';
+}
+function toggleTheme(){
+  currentTheme=currentTheme==='dark'?'light':'dark';
+  applyTheme();autoSave();
+  toast('info',currentTheme==='dark'?'Dark Mode':'Light Mode');
+}
+
+// ═══════════════════════════════════════════════════
+// MOBILE NAV
+// ═══════════════════════════════════════════════════
+function setMobActive(name){
+  ['dashboard','reports','counters','settings'].forEach(n=>{
+    const el=document.getElementById(`mob-${n}`);
+    if(el)el.classList.toggle('active',n===name);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function isAdmin(u){if(!u)return false;const uid=typeof u==='string'?u:u.username;return users[uid]&&users[uid].role==='Admin';}
+function isAdminUser(){return currentUser&&isAdmin(currentUser);}
+function getSnMapping(){const merged={...defaultSnMapping};Object.keys(counterInventory).forEach(k=>{if(counterInventory[k].currentSN)merged[k]=counterInventory[k].currentSN;});return merged;}
+function formatCounter(counterStr){
+  if(!counterStr)return'<span style="color:var(--text-dim);">—</span>';
+  const match=counterStr.toUpperCase().match(/^(SP|DS)(-)(\d+)([A-Z]*)$/);
+  if(match){const prefix=match[1],num=match[3],letter=match[4];const pc=prefix==='SP'?'var(--cyan)':'var(--amber)';return`<span style="color:${pc};font-weight:800;font-family:'Share Tech Mono',monospace;">${prefix}</span><span style="color:rgba(128,160,192,0.4);">-</span><span style="color:var(--text);font-weight:700;">${num}</span><span style="color:#a78bfa;font-weight:700;">${letter}</span>`;}
+  return`<span style="font-family:'Share Tech Mono',monospace;color:var(--text);">${counterStr}</span>`;
+}
+
+// ═══════════════════════════════════════════════════
+// LOGIN / REGISTER / LOGOUT
+// ═══════════════════════════════════════════════════
+function switchLoginTab(tab){
+  document.getElementById('tab-login').classList.toggle('active',tab==='login');
+  document.getElementById('tab-register').classList.toggle('active',tab==='register');
+  document.getElementById('loginForm').style.display=tab==='login'?'flex':'none';
+  document.getElementById('registerForm').style.display=tab==='register'?'flex':'none';
+}
+
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim().toUpperCase();
+  const p=document.getElementById('loginPass').value;
+  const errEl=document.getElementById('loginError');
+  if(users[u]&&users[u].pass===p){
+    currentUser={username:u,...users[u]};
+    if(isAdminUser())editModeEnabled=true;
+    saveSession(u);
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appShell').style.display='flex';
+    setupUserUI();initApp();showPage('dashboard');
+    startRealtimeListener();
+    if(isAdminUser()){toast('success','ISS Smeagol — Administrator access granted');}
+    else{toast('success',`Welcome back, ${users[u].name}`);}
+  }else{
+    errEl.style.display='block';
+    setTimeout(()=>errEl.style.display='none',3000);
+  }
+}
+
+function doRegister(){
+  const uid=document.getElementById('regUser').value.trim().toUpperCase();
+  const name=document.getElementById('regName').value.trim();
+  const role=document.getElementById('regRole').value;
+  const pass=document.getElementById('regPass').value;
+  const adminKey=document.getElementById('regAdminKey').value;
+  const errEl=document.getElementById('registerError');
+  if(!uid||!name||!pass){errEl.innerText='⚠ Fill all required fields.';errEl.style.display='block';return;}
+  if(pass.length<4){errEl.innerText='⚠ Password must be at least 4 characters.';errEl.style.display='block';return;}
+  if(adminKey!==ADMIN_REGISTRATION_KEY){errEl.innerText='⚠ Invalid admin passkey.';errEl.style.display='block';return;}
+  if(users[uid]){errEl.innerText=`⚠ User ID "${uid}" already exists.`;errEl.style.display='block';return;}
+  users[uid]={pass,role,name};
+  teamMembers.push({id:uid,name,status:'Online',role,photo:null});
+  autoSave();
+  errEl.style.display='none';
+  Swal.fire({icon:'success',title:'Account Created!',html:`<p style="font-size:12px;color:#7a9cc0;">User <b style="color:#22d3ee;">${uid}</b> registered.</p>`,background:'#0d1e33',color:'#fff',timer:2200,showConfirmButton:false});
+  switchLoginTab('login');
+  document.getElementById('loginUser').value=uid;
+}
+
+function setupUserUI(){
+  const u=currentUser.username;
+  const initials=u.slice(0,2);
+  const member=teamMembers.find(m=>m.id===u);
+  const isAdm=isAdminUser();
+  const setAvatar=(el)=>{if(!el)return;if(member&&member.photo){el.innerHTML=`<img src="${member.photo}">`;}else{el.innerText=initials;}};
+  setAvatar(document.getElementById('settings-avatar'));
+  setAvatar(document.getElementById('headerAvatar'));
+  const displayName=isAdm?'ISS Smeagol':(users[u].name||u);
+  const roleLabel=isAdm?'ADMINISTRATOR':users[u].role.toUpperCase();
+  const hn=document.getElementById('headerUserName');
+  const hr=document.getElementById('headerUserRole');
+  if(hn)hn.innerText=displayName;
+  if(hr)hr.innerText=roleLabel;
+  document.getElementById('settings-username').innerText=displayName;
+  document.getElementById('settings-role').innerText=roleLabel;
+  document.getElementById('sys-session-user').innerText=u;
+  document.getElementById('adminUsersSection').style.display=isAdm?'block':'none';
+  renderAdminUsers();
+}
+
+function doLogout(){
+  Swal.fire({
+    title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:18px;letter-spacing:2px;">LOGOUT</span>',
+    html:'<p style="font-size:12px;color:#7a9cc0;">End your current session?</p>',
+    background:'#0d1e33',showCancelButton:true,
+    confirmButtonColor:'#e11d48',cancelButtonColor:'#162d4a',
+    confirmButtonText:'Yes, logout',cancelButtonText:'Cancel'
+  }).then(r=>{
+    if(r.isConfirmed){
+      clearSession();currentUser=null;editModeEnabled=false;
+      document.getElementById('loginScreen').style.display='flex';
+      document.getElementById('appShell').style.display='none';
+      document.getElementById('loginUser').value='';
+      document.getElementById('loginPass').value='';
+      applyEditModeUI();
+    }
+  });
+}
+
+function changePassword(){
+  const np=document.getElementById('newPass').value;
+  const cp=document.getElementById('confirmPass').value;
+  if(!np||!cp){toast('error','Fill both fields');return;}
+  if(np!==cp){toast('error','Passwords do not match');return;}
+  if(np.length<4){toast('error','Min 4 characters');return;}
+  users[currentUser.username].pass=np;
+  document.getElementById('newPass').value='';
+  document.getElementById('confirmPass').value='';
+  autoSave();toast('success','Password updated');
+}
+
+function renderAdminUsers(){
+  const tbody=document.getElementById('adminUsersTable');if(!tbody)return;
+  tbody.innerHTML='';
+  Object.entries(users).forEach(([uid,u])=>{
+    tbody.innerHTML+=`<tr>
+      <td><span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);font-weight:700;">${uid}</span></td>
+      <td style="font-size:10px;color:var(--text);">${u.name}</td>
+      <td><span class="badge" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.22);color:#a78bfa;">${u.role}</span></td>
+      <td style="text-align:center;"><button onclick="adminResetPass('${uid}')" class="btn-secondary" style="padding:4px 10px;font-size:9px;gap:4px;"><i class="fa-solid fa-key" style="color:var(--amber);"></i>Reset</button></td>
+      <td style="text-align:center;">${uid!=='ISS'?`<button onclick="adminDeleteUser('${uid}')" class="btn-danger" style="padding:4px 10px;font-size:9px;gap:4px;"><i class="fa-solid fa-trash"></i>Del</button>`:'—'}</td>
+    </tr>`;
+  });
+}
+
+async function adminResetPass(uid){
+  const{value:np}=await Swal.fire({title:`<span style="color:white;font-size:13px;font-family:Rajdhani,sans-serif;">Reset password for ${uid}</span>`,background:'#0d1e33',input:'password',inputPlaceholder:'New password',showCancelButton:true,confirmButtonColor:'#0891b2',cancelButtonColor:'#162d4a',customClass:{input:'swal-input-custom'}});
+  if(np){users[uid].pass=np;autoSave();toast('success',`Password for ${uid} reset`);}
+}
+
+async function adminDeleteUser(uid){
+  if(uid==='ISS'){toast('error','Cannot delete root admin');return;}
+  const r=await Swal.fire({title:`Delete ${uid}?`,text:'Cannot be undone.',icon:'warning',background:'#0d1e33',color:'#fff',showCancelButton:true,confirmButtonColor:'#be123c',cancelButtonColor:'#162d4a'});
+  if(r.isConfirmed){
+    delete users[uid];
+    const idx=teamMembers.findIndex(m=>m.id===uid);
+    if(idx>-1)teamMembers.splice(idx,1);
+    autoSave();renderAdminUsers();renderTeamPage();
+    toast('success',`${uid} deleted`);
+  }
+}
+
+function clearAllData(){
+  Swal.fire({
+    title:'<span style="font-family:Rajdhani,sans-serif;color:var(--rose);font-size:18px;">RESET ALL DATA?</span>',
+    html:'<p style="font-size:12px;color:#7a9cc0;">Permanently delete all requests and saved data.</p>',
+    background:'#0d1e33',showCancelButton:true,icon:'warning',
+    confirmButtonColor:'#e11d48',cancelButtonColor:'#162d4a',
+    confirmButtonText:'Yes, reset',cancelButtonText:'Cancel'
+  }).then(r=>{
+    if(r.isConfirmed){
+      reportsData={};terminalOfflineStatus={};lastFollowUpDates={};shownAlerts={};counterInventory={};stocksData=[];
+      autoSave();
+      rebuildMonthCards();updateDashboardStats();updateActivePercentage();updateUrgentAlerts();renderStocksPanel();
+      toast('success','All data cleared');
+    }
+  });
+}
+
+function saveDisplayName(){
+  const ni=document.getElementById('editNameInput');
+  const newName=ni?ni.value.trim():'';
+  if(!newName){toast('error','Name cannot be empty');return;}
+  if(!currentUser)return;
+  const uid=currentUser.username;
+  users[uid].name=newName;currentUser.name=newName;
+  const member=teamMembers.find(m=>m.id===uid);
+  if(member)member.name=newName;
+  autoSave();setupUserUI();toast('success','Display name updated');
+}
+
+function updateSettingsInfo(){
+  let total=0;Object.values(reportsData).forEach(m=>total+=m.length);
+  document.getElementById('sys-total-records').innerText=total;
+  document.getElementById('sys-counter-count').innerText=Object.keys(defaultSnMapping).length;
+  if(currentUser){
+    document.getElementById('sys-session-user').innerText=currentUser.username;
+    const ni=document.getElementById('editNameInput');
+    if(ni)ni.value=currentUser.name||currentUser.username;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+const pageMap={dashboard:'dashboardView',reports:'reportsView',team:'teamView',settings:'settingsView',counters:'countersView',nodes:'nodesView'};
+
+function showPage(name){
+  Object.values(pageMap).forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('active');});
+  const mv=document.getElementById('monthDetailsView');
+  mv.style.display='none';mv.classList.remove('active');
+  ['dashboard','reports','team','settings','counters','nodes'].forEach(n=>{const el=document.getElementById(`nav-${n}`);if(el)el.classList.remove('active');});
+  if(pageMap[name]){document.getElementById(pageMap[name]).classList.add('active');const nav=document.getElementById(`nav-${name}`);if(nav)nav.classList.add('active');}
+  if(name==='reports')renderReportsPage();
+  if(name==='team')renderTeamPage();
+  if(name==='settings')updateSettingsInfo();
+  if(name==='counters')renderCountersPage();
+  if(name==='nodes')renderNodesPage();
+}
+
+// ═══════════════════════════════════════════════════
+// EDIT MODE
+// ═══════════════════════════════════════════════════
+function toggleEditMode(){
+  if(isAdminUser())return;
+  editModeEnabled=!editModeEnabled;
+  applyEditModeUI();autoSave();
+  toast(editModeEnabled?'success':'info',editModeEnabled?'Edit Mode Enabled':'Edit Mode Disabled');
+}
+
+function applyEditModeUI(){
+  const banner=document.getElementById('modeBanner');
+  const bannerIcon=document.getElementById('bannerIcon');
+  const bannerText=document.getElementById('bannerText');
+  const indicatorIcon=document.getElementById('editIndicatorIcon');
+  const card=document.getElementById('editModeCard');
+  const glow=document.getElementById('editGlowBg');
+  const bigIcon=document.getElementById('editBigIcon');
+  const bigIconI=document.getElementById('editBigIconI');
+  const label=document.getElementById('editModeLabel');
+  const desc=document.getElementById('editModeDesc');
+  const toggle=document.getElementById('bigToggle');
+  const thumbIcon=document.getElementById('toggleThumbIcon');
+  const pill=document.getElementById('editStatusPill');
+  const pillDot=document.getElementById('editStatusDot');
+  const pillText=document.getElementById('editStatusText');
+  const labelOff=document.getElementById('labelOff');
+  const labelOn=document.getElementById('labelOn');
+  const toggleWrap=document.getElementById('editToggleWrap');
+  if(!banner||!card)return;
+  const adminAuto=isAdminUser();
+  if(adminAuto){
+    banner.className='admin-auto';bannerIcon.className='fa-solid fa-crown';bannerText.innerText='ISS SMEAGOL LOGGED IN — ADMINISTRATOR FULL ACCESS — EDIT MODE AUTO-ENABLED';
+    indicatorIcon.style.color='var(--cyan)';indicatorIcon.className='fa-solid fa-crown';
+    card.className='edit-mode-card admin-auto';
+    glow.style.background='radial-gradient(ellipse at center,rgba(34,211,238,0.07) 0%,transparent 70%)';
+    bigIcon.style.cssText='width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative;z-index:1;background:rgba(34,211,238,0.1);border:2px solid rgba(34,211,238,0.3);';
+    bigIconI.className='fa-solid fa-crown';bigIconI.style.color='var(--cyan)';
+    label.style.color='var(--cyan)';label.innerText='ADMINISTRATOR ACCESS';
+    desc.innerText='ISS Smeagol — Full system access automatically granted.';
+    if(toggleWrap)toggleWrap.style.display='none';
+    pill.style.cssText='margin-top:16px;display:inline-flex;align-items:center;gap:7px;padding:6px 16px;border-radius:40px;background:rgba(34,211,238,0.09);border:1px solid rgba(34,211,238,0.22);position:relative;z-index:1;';
+    pillDot.style.cssText='width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);display:block;';
+    pillText.style.color='var(--cyan)';pillText.innerText='ADMIN AUTO';
+  }else if(editModeEnabled){
+    banner.className='unlocked';bannerIcon.className='fa-solid fa-unlock';bannerText.innerText='EDIT MODE ENABLED — MODIFICATIONS ALLOWED';
+    indicatorIcon.style.color='var(--emerald)';indicatorIcon.className='fa-solid fa-unlock';
+    card.className='edit-mode-card unlocked';
+    glow.style.background='radial-gradient(ellipse at center,rgba(16,185,129,0.07) 0%,transparent 70%)';
+    bigIcon.style.cssText='width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative;z-index:1;background:rgba(16,185,129,0.1);border:2px solid rgba(16,185,129,0.28);';
+    bigIconI.className='fa-solid fa-unlock';bigIconI.style.color='var(--emerald)';
+    label.style.color='var(--emerald)';label.innerText='EDIT MODE ON';
+    desc.innerText='You can now add requests and edit records.';
+    if(toggleWrap)toggleWrap.style.display='';
+    if(toggle){toggle.className='big-toggle unlocked';if(thumbIcon)thumbIcon.className='fa-solid fa-unlock';}
+    pill.style.cssText='margin-top:16px;display:inline-flex;align-items:center;gap:7px;padding:6px 16px;border-radius:40px;background:rgba(16,185,129,0.09);border:1px solid rgba(16,185,129,0.22);position:relative;z-index:1;';
+    pillDot.style.cssText='width:6px;height:6px;border-radius:50%;background:var(--emerald);box-shadow:0 0 8px var(--emerald);display:block;';
+    pillText.style.color='var(--emerald)';pillText.innerText='UNLOCKED';
+    if(labelOff)labelOff.style.color='var(--text-dim)';
+    if(labelOn)labelOn.style.color='var(--emerald)';
+  }else{
+    banner.className='locked';bannerIcon.className='fa-solid fa-lock';bannerText.innerText='EDIT MODE DISABLED — GO TO SETTINGS TO ENABLE';
+    indicatorIcon.style.color='var(--rose)';indicatorIcon.className='fa-solid fa-lock';
+    card.className='edit-mode-card locked';
+    glow.style.background='radial-gradient(ellipse at center,rgba(244,63,94,0.07) 0%,transparent 70%)';
+    bigIcon.style.cssText='width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative;z-index:1;background:rgba(244,63,94,0.1);border:2px solid rgba(244,63,94,0.28);';
+    bigIconI.className='fa-solid fa-lock';bigIconI.style.color='var(--rose)';
+    label.style.color='var(--rose)';label.innerText='EDIT MODE OFF';
+    desc.innerText='Enable to add requests and edit records.';
+    if(toggleWrap)toggleWrap.style.display='';
+    if(toggle){toggle.className='big-toggle locked';if(thumbIcon)thumbIcon.className='fa-solid fa-lock';}
+    pill.style.cssText='margin-top:16px;display:inline-flex;align-items:center;gap:7px;padding:6px 16px;border-radius:40px;background:rgba(244,63,94,0.09);border:1px solid rgba(244,63,94,0.22);position:relative;z-index:1;';
+    pillDot.style.cssText='width:6px;height:6px;border-radius:50%;background:var(--rose);box-shadow:0 0 8px var(--rose);display:block;';
+    pillText.style.color='var(--rose)';pillText.innerText='LOCKED';
+    if(labelOff)labelOff.style.color='var(--rose)';
+    if(labelOn)labelOn.style.color='var(--text-dim)';
+  }
+}
+
+function guardedAddRequest(){if(!editModeEnabled&&!isAdminUser()){showEditModeWarning();return;}openAddRequestModal();}
+function guardedEdit(month,index){if(!editModeEnabled&&!isAdminUser()){showEditModeWarning();return;}openEditRequestModal(month,index);}
+function guardedStatus(month,index,val){if(!editModeEnabled&&!isAdminUser()){showEditModeWarning();return;}setStatus(month,index,val);}
+function showEditModeWarning(){
+  Swal.fire({
+    background:'#0d1e33',color:'#c8dff5',
+    title:'<span style="font-family:Rajdhani,sans-serif;font-size:18px;color:white;letter-spacing:2px;">EDIT MODE DISABLED</span>',
+    html:'<p style="font-size:12px;color:#7a9cc0;">Enable <b style="color:#22d3ee;">Edit Mode</b> in Settings to modify records.</p>',
+    confirmButtonText:'Go to Settings',confirmButtonColor:'#0891b2',showCancelButton:true,cancelButtonColor:'#162d4a'
+  }).then(r=>{if(r.isConfirmed)showPage('settings');});
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+function initApp(){
+  applyTheme();
+  initializeTerminalStatus();
+  rebuildMonthCards();
+  updateDashboardStats();
+  updateActivePercentage();
+  updateUrgentAlerts();
+  applyEditModeUI();
+  renderStocksPanel();
+}
+
+function rebuildMonthCards(){
+  const container=document.getElementById('monthsContainer');
+  container.innerHTML='';
+  const months=Object.keys(reportsData);
+  if(!months.length){
+    container.innerHTML=`<div id="emptyState" style="grid-column:1/-1;text-align:center;padding:44px 20px;"><i class="fa-solid fa-calendar-days" style="font-size:40px;color:rgba(34,211,238,0.07);margin-bottom:12px;display:block;"></i><p style="font-size:12px;color:var(--text-dim);">No requests yet. Click <b style="color:var(--cyan);">+ NEW REQUEST</b> to begin.</p></div>`;
+    return;
+  }
+  months.sort((a,b)=>monthsList.indexOf(a)-monthsList.indexOf(b));
+  months.forEach(m=>buildMonthCardElement(m));
+}
+
+function initializeTerminalStatus(){
+  Object.keys(defaultSnMapping).forEach(c=>{if(terminalOfflineStatus[c]===undefined)terminalOfflineStatus[c]=false;});
+}
+
+// ═══════════════════════════════════════════════════
+// TERMINAL STATUS
+// ═══════════════════════════════════════════════════
+function updateActivePercentage(){
+  const allCounters=Object.keys(defaultSnMapping);
+  const total=allCounters.length;
+  const offlineSet=new Set(allCounters.filter(c=>terminalOfflineStatus[c]===true));
+  const maintenanceSet=new Set();
+  Object.values(reportsData).forEach(arr=>arr.forEach(r=>{if(r.status==='PENDING'||r.status==='REPORTED')maintenanceSet.add(r.counter);}));
+  const pureMaintenanceSet=new Set([...maintenanceSet].filter(c=>!offlineSet.has(c)));
+  const offlineCount=offlineSet.size,maintenanceCount=pureMaintenanceSet.size;
+  const activeCount=total-offlineCount-maintenanceCount;
+  const ap=Math.max(0,Math.round((activeCount/total)*100));
+  const mp=Math.max(0,Math.round((maintenanceCount/total)*100));
+  const op=Math.max(0,Math.round((offlineCount/total)*100));
+  document.getElementById('active-percentage').innerText=ap+'%';
+  document.getElementById('active-label').innerText=`${ap}% Active Terminals`;
+  document.getElementById('maintenance-label').innerText=`${mp}% Maintenance`;
+  document.getElementById('offline-label').innerText=`${op}% Offline`;
+}
+
+async function openTerminalStatusModal(){
+  let html=`<div style="max-height:380px;overflow-y:auto;padding-right:8px;text-align:left;"><p style="font-size:9px;color:var(--text-dim);margin-bottom:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">CHECK = OFFLINE.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">`;
+  const spCounters=Object.keys(defaultSnMapping).filter(c=>c.startsWith('SP')).sort();
+  const dsCounters=Object.keys(defaultSnMapping).filter(c=>c.startsWith('DS')).sort();
+  const renderGroup=(label,counters,color)=>{
+    html+=`<div style="grid-column:1/-1;padding:5px 0 3px;border-bottom:1px solid #162d4a;margin-bottom:2px;"><span style="font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;color:${color};letter-spacing:2px;">${label} COUNTERS</span></div>`;
+    counters.forEach(c=>{const isOffline=terminalOfflineStatus[c]===true;html+=`<label style="display:flex;align-items:center;gap:9px;background:rgba(10,22,38,0.8);padding:7px 11px;border-radius:8px;border:1px solid ${isOffline?'rgba(244,63,94,0.28)':'#162d4a'};cursor:pointer;"><input type="checkbox" style="accent-color:#f43f5e;" ${isOffline?'checked':''} data-counter="${c}" class="terminal-offline-chk"><span style="font-size:9px;font-weight:700;color:${isOffline?'#f43f5e':'#c8dff5'};font-family:'Share Tech Mono',monospace;">${c}</span>${isOffline?'<span style="font-size:7px;color:#f43f5e;margin-left:auto;">OFFLINE</span>':''}</label>`;});
+  };
+  renderGroup('SP',spCounters,'#22d3ee');renderGroup('DS',dsCounters,'#f59e0b');
+  html+=`</div></div>`;
+  const result=await Swal.fire({
+    title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:15px;letter-spacing:2px;">TERMINAL INVENTORY</span>',
+    background:'#0d1e33',html,confirmButtonColor:'#0891b2',confirmButtonText:'Save',width:540,
+    showCancelButton:true,cancelButtonColor:'#162d4a',
+    preConfirm:()=>{document.querySelectorAll('.terminal-offline-chk').forEach(cb=>{terminalOfflineStatus[cb.dataset.counter]=cb.checked;});return true;}
+  });
+  if(result.isConfirmed){updateActivePercentage();autoSave();toast('success','Terminal inventory saved');}
+}
+
+// ═══════════════════════════════════════════════════
+// URGENT ALERTS
+// ═══════════════════════════════════════════════════
+function updateUrgentAlerts(){
+  const box=document.getElementById('urgentAlertsBox');if(!box)return;
+  const today=new Date();today.setHours(0,0,0,0);
+  let urgent=[];
+  Object.keys(reportsData).forEach(m=>{reportsData[m].forEach(r=>{if(r.status!=='PENDING')return;const rd=new Date(r.date+'T00:00:00');rd.setHours(0,0,0,0);const days=Math.floor((today-rd)/86400000);if(days>=3)urgent.push({...r,days});});});
+  if(!urgent.length){box.style.cssText='background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.16);border-radius:11px;padding:12px;';box.innerHTML='<p style="font-size:10px;color:rgba(16,185,129,0.8);font-weight:600;">No urgent alerts.</p>';return;}
+  box.style.cssText='background:rgba(244,63,94,0.05);border:1px solid rgba(244,63,94,0.18);border-radius:11px;padding:12px;display:flex;flex-direction:column;gap:7px;';
+  let html='';
+  urgent.slice(0,3).forEach(item=>{html+=`<div style="background:rgba(244,63,94,0.07);border:1px solid rgba(244,63,94,0.18);border-radius:8px;padding:9px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font-size:11px;font-weight:700;color:var(--rose);font-family:'Share Tech Mono',monospace;">${item.counter}</span><span style="font-size:8px;color:white;background:rgba(244,63,94,0.2);padding:1px 7px;border-radius:5px;font-weight:700;">${item.days}D</span></div><p style="font-size:8px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">SN: ${item.sn}</p></div>`;});
+  if(urgent.length>3)html+=`<p style="font-size:9px;color:var(--text-dim);text-align:center;">+${urgent.length-3} more</p>`;
+  box.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════
+// STOCKS PANEL
+// ═══════════════════════════════════════════════════
+function renderStocksPanel(){
+  const container=document.getElementById('stocksList');if(!container)return;
+  if(!stocksData.length){container.innerHTML='<p style="font-size:10px;color:var(--text-dim);font-style:italic;text-align:center;padding:10px 0;">No stock items yet.</p>';return;}
+  container.innerHTML='';
+  stocksData.forEach((item,idx)=>{
+    const pct=item.maxQty>0?Math.min(100,Math.round((item.quantity/item.maxQty)*100)):0;
+    const barColor=pct<=20?'var(--rose)':pct<=50?'var(--amber)':'var(--emerald)';
+    const div=document.createElement('div');
+    div.className='stock-item';
+    div.innerHTML=`<div style="flex:1;min-width:0;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-size:10px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;">${item.name}</span><span style="font-size:9px;font-weight:700;color:${barColor};font-family:'Share Tech Mono',monospace;flex-shrink:0;margin-left:5px;">${item.quantity} ${item.unit||'pcs'}</span></div><div class="stock-bar-track"><div class="stock-bar-fill" style="width:${pct}%;background:${barColor};"></div></div></div><div style="display:flex;gap:3px;flex-shrink:0;margin-left:5px;"><button onclick="editStockItem(${idx})" style="width:22px;height:22px;border-radius:5px;background:rgba(34,211,238,0.05);border:1px solid rgba(34,211,238,0.14);color:var(--cyan);cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Edit"><i class="fa-solid fa-pen" style="font-size:8px;"></i></button><button onclick="deleteStockItem(${idx})" style="width:22px;height:22px;border-radius:5px;background:rgba(244,63,94,0.05);border:1px solid rgba(244,63,94,0.14);color:var(--rose);cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Delete"><i class="fa-solid fa-trash" style="font-size:8px;"></i></button></div>`;
+    container.appendChild(div);
+  });
+}
+
+async function openAddStockModal(){
+  const{value:fv}=await Swal.fire({
+    title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:15px;letter-spacing:2px;">ADD STOCK ITEM</span>',
+    background:'#0d1e33',
+    html:`<div style="display:flex;flex-direction:column;gap:12px;text-align:left;padding:4px;"><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Item Name</p><input id="sk-name" placeholder="e.g. 2-Meter Cable" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;"><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Quantity</p><input id="sk-qty" type="number" min="0" placeholder="e.g. 10" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Max Quantity</p><input id="sk-maxqty" type="number" min="1" placeholder="e.g. 20" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Unit</p><input id="sk-unit" placeholder="e.g. pcs, meters" value="pcs" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div></div>`,
+    focusConfirm:false,showCancelButton:true,confirmButtonColor:'#0891b2',cancelButtonColor:'#162d4a',confirmButtonText:'Add Stock',
+    preConfirm:()=>({name:document.getElementById('sk-name').value.trim(),quantity:parseInt(document.getElementById('sk-qty').value)||0,maxQty:parseInt(document.getElementById('sk-maxqty').value)||10,unit:document.getElementById('sk-unit').value.trim()||'pcs',id:Date.now()})
+  });
+  if(fv&&fv.name){stocksData.push(fv);autoSave();renderStocksPanel();toast('success','Stock item added');}
+}
+
+async function editStockItem(idx){
+  const item=stocksData[idx];if(!item)return;
+  const{value:fv}=await Swal.fire({
+    title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:15px;letter-spacing:2px;">EDIT STOCK ITEM</span>',
+    background:'#0d1e33',
+    html:`<div style="display:flex;flex-direction:column;gap:12px;text-align:left;padding:4px;"><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Item Name</p><input id="sk-name" value="${item.name}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;"><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Quantity</p><input id="sk-qty" type="number" min="0" value="${item.quantity}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Max Quantity</p><input id="sk-maxqty" type="number" min="1" value="${item.maxQty||10}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Unit</p><input id="sk-unit" value="${item.unit||'pcs'}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div></div>`,
+    focusConfirm:false,showCancelButton:true,confirmButtonColor:'#0891b2',cancelButtonColor:'#162d4a',confirmButtonText:'Save Changes',
+    preConfirm:()=>({...item,name:document.getElementById('sk-name').value.trim(),quantity:parseInt(document.getElementById('sk-qty').value)||0,maxQty:parseInt(document.getElementById('sk-maxqty').value)||10,unit:document.getElementById('sk-unit').value.trim()||'pcs'})
+  });
+  if(fv&&fv.name){stocksData[idx]=fv;autoSave();renderStocksPanel();toast('success','Stock item updated');}
+}
+
+async function deleteStockItem(idx){
+  const item=stocksData[idx];
+  const r=await Swal.fire({title:`Delete "${item.name}"?`,icon:'warning',background:'#0d1e33',color:'#fff',showCancelButton:true,confirmButtonColor:'#be123c',cancelButtonColor:'#162d4a'});
+  if(r.isConfirmed){stocksData.splice(idx,1);autoSave();renderStocksPanel();toast('success','Stock item removed');}
+}
+
+// ═══════════════════════════════════════════════════
+// NODES PAGE
+// ═══════════════════════════════════════════════════
+function renderNodesPage(){
+  const tbody=document.getElementById('nodesTableBody');if(!tbody)return;
+  tbody.innerHTML='';
+  Object.entries(users).forEach(([uid,u])=>{
+    const isAdminUser_=u.role==='Admin';const isCurrent=currentUser&&currentUser.username===uid;
+    tbody.innerHTML+=`<tr>
+      <td><i class="fa-solid fa-diagram-project" style="color:${isAdminUser_?'var(--cyan)':'var(--text-dim)'};font-size:13px;"></i></td>
+      <td><span style="font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;color:${isCurrent?'var(--cyan)':'var(--text)'};">${uid.toLowerCase()}</span>${isCurrent?'<span style="font-size:7px;color:var(--emerald);margin-left:8px;font-family:\'Share Tech Mono\',monospace;">● ACTIVE SESSION</span>':''}</td>
+      <td>${isAdminUser_?`<span style="background:rgba(34,211,238,0.09);border:1px solid rgba(34,211,238,0.28);color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;padding:3px 10px;border-radius:5px;letter-spacing:2px;">ADMINISTRATOR</span>`:`<span style="background:rgba(22,45,74,0.5);border:1px solid var(--border);color:var(--text-mid);font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;padding:3px 10px;border-radius:5px;letter-spacing:2px;">OPERATOR NODE</span>`}</td>
+      <td style="text-align:right;">${isAdminUser_?`<span style="color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:5px;"><i class="fa-solid fa-crown" style="color:var(--amber);"></i>ROOT SECURE</span>`:(isAdmin(currentUser)?`<button onclick="adminPurgeUser('${uid}')" style="background:rgba(244,63,94,0.09);border:1px solid rgba(244,63,94,0.28);color:var(--rose);font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;padding:5px 12px;border-radius:6px;cursor:pointer;letter-spacing:1px;display:inline-flex;align-items:center;gap:5px;"><i class="fa-solid fa-user-minus"></i>PURGE</button>`:`<span style="color:var(--text-dim);font-size:9px;font-family:'Share Tech Mono',monospace;">—</span>`)}</td>
+    </tr>`;
+  });
+}
+
+async function adminPurgeUser(uid){
+  if(uid==='ISS'){toast('error','Cannot purge root admin');return;}
+  const r=await Swal.fire({title:`<span style="font-family:Rajdhani,sans-serif;color:var(--rose);font-size:15px;">PURGE NODE: ${uid}?</span>`,html:`<p style="font-size:12px;color:#7a9cc0;">Permanently remove <b style="color:#22d3ee;">${uid}</b>.</p>`,icon:'warning',background:'#0d1e33',color:'#fff',showCancelButton:true,confirmButtonColor:'#be123c',cancelButtonColor:'#162d4a',confirmButtonText:'PURGE'});
+  if(r.isConfirmed){
+    delete users[uid];const idx=teamMembers.findIndex(m=>m.id===uid);if(idx>-1)teamMembers.splice(idx,1);
+    autoSave();renderNodesPage();renderTeamPage();renderAdminUsers();
+    toast('success',`${uid} purged from network`);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// TEAM PAGE
+// ═══════════════════════════════════════════════════
+function renderTeamPage(){
+  const search=(document.getElementById('teamSearchInput')?.value||'').toLowerCase();
+  const tbody=document.getElementById('teamTableBody');if(!tbody)return;
+  const adminNotice=document.getElementById('teamAdminNotice');
+  const addBtn=document.getElementById('addMemberBtn');
+  if(adminNotice)adminNotice.style.display=isAdminUser()?'none':'block';
+  if(addBtn)addBtn.style.display=isAdminUser()?'':'none';
+  tbody.innerHTML='';
+  const allUsers=Object.entries(users);
+  const filtered=allUsers.filter(([uid,u])=>uid.toLowerCase().includes(search)||(u.name||'').toLowerCase().includes(search)||(u.role||'').toLowerCase().includes(search));
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="5" style="padding:28px;text-align:center;color:var(--text-dim);font-style:italic;font-size:11px;">No accounts found.</td></tr>`;return;}
+  filtered.forEach(([uid,u])=>{
+    const isAdminUser_=u.role==='Admin';const isCurrent=currentUser&&currentUser.username===uid;const canManage=isAdminUser()&&uid!=='ISS';
+    const roleColor=isAdminUser_?'var(--cyan)':u.role==='Technician'?'var(--amber)':'var(--text-mid)';
+    const roleBg=isAdminUser_?'rgba(34,211,238,0.09)':u.role==='Technician'?'rgba(245,158,11,0.08)':'rgba(22,45,74,0.5)';
+    const roleBorder=isAdminUser_?'rgba(34,211,238,0.28)':u.role==='Technician'?'rgba(245,158,11,0.2)':'var(--border)';
+    const actionsHtml=isAdminUser_&&uid==='ISS'?`<span style="color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:5px;"><i class="fa-solid fa-crown" style="color:var(--amber);"></i>ROOT SECURE</span>`
+    :canManage?`<div style="display:inline-flex;gap:6px;align-items:center;"><select onchange="teamChangeRole('${uid}',this.value)" style="background:rgba(4,10,20,0.8);border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;letter-spacing:1px;padding:4px 22px 4px 8px;cursor:pointer;outline:none;appearance:none;background-image:url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2322d3ee\' stroke-width=\'2\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e');background-repeat:no-repeat;background-position:right 6px center;background-size:9px;"><option value="Staff" ${u.role==='Staff'?'selected':''} style="background:#0d1e33;">Staff</option><option value="Technician" ${u.role==='Technician'?'selected':''} style="background:#0d1e33;">Technician</option><option value="Admin" ${u.role==='Admin'?'selected':''} style="background:#0d1e33;">Admin</option></select><button onclick="teamDeleteUser('${uid}')" style="background:rgba(244,63,94,0.09);border:1px solid rgba(244,63,94,0.28);color:var(--rose);font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;padding:5px 12px;border-radius:6px;cursor:pointer;letter-spacing:1px;display:inline-flex;align-items:center;gap:5px;"><i class="fa-solid fa-user-minus"></i>DELETE</button></div>`
+    :`<span style="color:var(--text-dim);font-size:9px;font-family:'Share Tech Mono',monospace;">—</span>`;
+    tbody.innerHTML+=`<tr>
+      <td><i class="fa-solid fa-user-circle" style="color:${isAdminUser_?'var(--cyan)':'var(--text-dim)'};font-size:15px;"></i></td>
+      <td><span style="font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;color:${isCurrent?'var(--cyan)':'var(--text)'};">${uid.toLowerCase()}</span>${isCurrent?'<span style="font-size:7px;color:var(--emerald);margin-left:8px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;">● ACTIVE SESSION</span>':''}</td>
+      <td style="color:var(--text-mid);font-size:11px;">${u.name||'—'}</td>
+      <td><span style="background:${roleBg};border:1px solid ${roleBorder};color:${roleColor};font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;padding:3px 10px;border-radius:5px;letter-spacing:2px;">${u.role.toUpperCase()}</span></td>
+      <td style="text-align:right;">${actionsHtml}</td>
+    </tr>`;
+  });
+}
+
+async function teamChangeRole(uid,newRole){
+  if(!isAdminUser()){toast('error','Administrator access required');return;}
+  if(uid==='ISS'){toast('error','Cannot modify root admin role');return;}
+  users[uid].role=newRole;const member=teamMembers.find(m=>m.id===uid);if(member)member.role=newRole;
+  autoSave();renderTeamPage();renderAdminUsers();
+  toast('success',`${uid} role changed to ${newRole}`);
+}
+
+async function teamDeleteUser(uid){
+  if(!isAdminUser()){toast('error','Administrator access required');return;}
+  if(uid==='ISS'){toast('error','Cannot delete root admin');return;}
+  const r=await Swal.fire({title:`<span style="font-family:Rajdhani,sans-serif;color:var(--rose);font-size:15px;letter-spacing:2px;">DELETE ACCOUNT: ${uid}?</span>`,html:`<p style="font-size:12px;color:#7a9cc0;">Permanently remove account <b style="color:#22d3ee;">${uid}</b>.</p>`,icon:'warning',background:'#0d1e33',color:'#fff',showCancelButton:true,confirmButtonColor:'#be123c',cancelButtonColor:'#162d4a',confirmButtonText:'DELETE'});
+  if(r.isConfirmed){
+    delete users[uid];const idx=teamMembers.findIndex(m=>m.id===uid);if(idx>-1)teamMembers.splice(idx,1);
+    autoSave();renderTeamPage();renderNodesPage();renderAdminUsers();
+    toast('success',`${uid} account deleted`);
+  }
+}
+
+async function openAddTeamMember(){
+  if(!isAdminUser()){toast('error','Administrator access required');return;}
+  const{value:result}=await Swal.fire({
+    title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:15px;letter-spacing:2px;">ADD NEW ACCOUNT</span>',
+    background:'#0d1e33',
+    html:`<div style="display:flex;flex-direction:column;gap:12px;text-align:left;padding:4px;"><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">User ID</p><input id="em-id" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;" placeholder="e.g. CE80"></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Display Name</p><input id="em-name" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;" placeholder="Full name"></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Role</p><select id="em-role" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"><option style="background:#0d1e33;">Staff</option><option style="background:#0d1e33;">Technician</option><option style="background:#0d1e33;">Admin</option></select></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Password</p><input id="em-pass" type="password" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;" placeholder="Min. 4 characters"></div></div>`,
+    focusConfirm:false,showCancelButton:true,confirmButtonColor:'#0891b2',cancelButtonColor:'#162d4a',confirmButtonText:'Create Account',
+    preConfirm:()=>{
+      const id=document.getElementById('em-id').value.toUpperCase().trim();
+      const name=document.getElementById('em-name').value.trim();
+      const role=document.getElementById('em-role').value;
+      const pass=document.getElementById('em-pass').value;
+      if(!id||!name||!pass){Swal.showValidationMessage('All fields required');return false;}
+      if(pass.length<4){Swal.showValidationMessage('Password min 4 characters');return false;}
+      if(users[id]){Swal.showValidationMessage(`User ID "${id}" already exists`);return false;}
+      return{id,name,role,pass};
+    }
+  });
+  if(result){
+    users[result.id]={pass:result.pass,name:result.name,role:result.role};
+    teamMembers.push({id:result.id,name:result.name,status:'Online',role:result.role,photo:null});
+    autoSave();renderTeamPage();renderNodesPage();renderAdminUsers();
+    toast('success',`Account ${result.id} created`);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// MONTH CARDS
+// ═══════════════════════════════════════════════════
+function buildMonthCardElement(month){
+  const container=document.getElementById('monthsContainer');
+  const empty=document.getElementById('emptyState');if(empty)empty.remove();
+  if(document.getElementById(`card-${month}`)){updateMonthCard(month);return;}
+  const card=document.createElement('div');
+  card.id=`card-${month}`;card.className='month-analytics-card pop-in';
+  card.onclick=()=>viewMonthDetails(month);
+  const data=reportsData[month]||[];
+  const comp=data.filter(r=>r.status==='DONE').length;
+  const pend=data.filter(r=>r.status==='PENDING').length;
+  const rep=data.filter(r=>r.status==='REPORTED').length;
+  const sp=data.filter(r=>r.counter&&r.counter.startsWith('SP')).length;
+  const ds=data.filter(r=>r.counter&&r.counter.startsWith('DS')).length;
+  const total=data.length;
+  const compPct=total?Math.round((comp/total)*100):0;
+  card.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+      <div><p class="section-label" style="margin-bottom:3px;letter-spacing:2px;">2026</p><h3 style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--text);letter-spacing:1px;">${month.toUpperCase()}</h3></div>
+      <div style="text-align:right;"><span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--text);">${total}</span><p class="section-label" style="font-size:7px;">TOTAL</p></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;">
+      <div class="month-stat-mini"><p class="section-label" style="margin-bottom:3px;font-size:7px;">SP</p><p style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;color:var(--cyan);">${sp}</p></div>
+      <div class="month-stat-mini"><p class="section-label" style="margin-bottom:3px;font-size:7px;">DS</p><p style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;color:var(--amber);">${ds}</p></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px;">
+      <div style="display:flex;justify-content:space-between;"><div style="display:flex;align-items:center;gap:5px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--emerald);flex-shrink:0;"></span><span class="section-label" style="font-size:7px;">DONE</span></div><span style="font-size:11px;color:var(--emerald);font-weight:700;">${comp}</span></div>
+      <div style="display:flex;justify-content:space-between;"><div style="display:flex;align-items:center;gap:5px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--amber);flex-shrink:0;"></span><span class="section-label" style="font-size:7px;">PENDING</span></div><span style="font-size:11px;color:var(--amber);font-weight:700;">${pend}</span></div>
+      <div style="display:flex;justify-content:space-between;"><div style="display:flex;align-items:center;gap:5px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--rose);flex-shrink:0;"></span><span class="section-label" style="font-size:7px;">REPORTED</span></div><span style="font-size:11px;color:var(--rose);font-weight:700;">${rep}</span></div>
+    </div>
+    <div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span class="section-label" style="font-size:7px;">COMPLETION</span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--emerald);font-weight:700;">${compPct}%</span></div><div class="bar-track" style="height:4px;"><div class="bar-fill" style="width:${compPct}%;"></div></div></div>`;
+  container.appendChild(card);
+}
+
+// ═══════════════════════════════════════════════════
+// ADD / EDIT MODALS
+// ═══════════════════════════════════════════════════
+function buildCounterSelectHtml(selectedVal=''){
+  const snMap=getSnMapping();
+  const spCounters=Object.keys(snMap).filter(c=>c.startsWith('SP')).sort();
+  const dsCounters=Object.keys(snMap).filter(c=>c.startsWith('DS')).sort();
+  let html=`<select id="swal-counter" onchange="autoFillSNFromSelect(this.value)" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"><option value="">— Select Counter —</option><optgroup label="── SP COUNTERS ──">`;
+  spCounters.forEach(c=>{html+=`<option value="${c}" ${c===selectedVal?'selected':''}>${c}  (${snMap[c]})</option>`;});
+  html+=`</optgroup><optgroup label="── DS COUNTERS ──">`;
+  dsCounters.forEach(c=>{html+=`<option value="${c}" ${c===selectedVal?'selected':''}>${c}  (${snMap[c]})</option>`;});
+  return html+`</optgroup></select>`;
+}
+
+function buildCounterSelectFiltered(group){
+  const snMap=getSnMapping();const counters=Object.keys(snMap).filter(c=>c.startsWith(group)).sort();
+  let html=`<select id="swal-counter" onchange="autoFillSNFromSelect(this.value)" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"><option value="">— Select ${group} Counter —</option><optgroup label="── ${group} COUNTERS ──">`;
+  counters.forEach(c=>{html+=`<option value="${c}">${c}  (${snMap[c]})</option>`;});
+  return html+`</optgroup></select>`;
+}
+
+window.filterCounterGroup=function(group){const wrap=document.getElementById('counter-select-wrap');if(!wrap)return;wrap.innerHTML=group==='ALL'?buildCounterSelectHtml():buildCounterSelectFiltered(group);};
+function autoFillSNFromSelect(val){const snInput=document.getElementById('swal-sn');if(snInput&&val)snInput.value=getSnMapping()[val]||'';}
+
+async function openAddRequestModal(){
+  const todayStr=new Date().toISOString().split('T')[0];
+  const{value:fv}=await Swal.fire({
+    title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:17px;letter-spacing:2px;">ADD NEW REQUEST</span>',
+    background:'#0d1e33',
+    html:`<div style="display:flex;flex-direction:column;gap:12px;text-align:left;padding:4px;">
+      <div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Date Reported</p><input id="swal-date" type="date" value="${todayStr}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div>
+      <div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Counter</p>
+        <div style="display:flex;gap:4px;margin-bottom:5px;">
+          <button type="button" onclick="filterCounterGroup('SP')" style="flex:1;padding:4px;font-size:9px;font-weight:700;letter-spacing:1px;border-radius:6px;border:1px solid rgba(34,211,238,0.35);background:rgba(34,211,238,0.09);color:#22d3ee;cursor:pointer;font-family:'Share Tech Mono',monospace;">SP</button>
+          <button type="button" onclick="filterCounterGroup('DS')" style="flex:1;padding:4px;font-size:9px;font-weight:700;letter-spacing:1px;border-radius:6px;border:1px solid rgba(245,158,11,0.28);background:rgba(245,158,11,0.06);color:#f59e0b;cursor:pointer;font-family:'Share Tech Mono',monospace;">DS</button>
+          <button type="button" onclick="filterCounterGroup('ALL')" style="flex:1;padding:4px;font-size:9px;font-weight:700;letter-spacing:1px;border-radius:6px;border:1px solid #162d4a;background:rgba(255,255,255,0.03);color:#7a9cc0;cursor:pointer;font-family:'Share Tech Mono',monospace;">ALL</button>
+        </div>
+        <div id="counter-select-wrap">${buildCounterSelectHtml()}</div>
+      </div>
+      <div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Type</p>
+        <select id="swal-type" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"><option value="TERMINAL" style="background:#0d1e33;">TERMINAL</option><option value="CABLE" style="background:#0d1e33;">CABLE</option></select></div>
+      <div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Serial Number</p><input id="swal-sn" placeholder="Auto-fills from counter" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div>
+      <div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Remarks / Notes</p><input id="swal-remarks" placeholder="Optional notes..." class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div>
+      <div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Initial Status</p>
+        <div style="display:flex;gap:7px;">
+          <label style="flex:1;display:flex;align-items:center;gap:7px;padding:9px 11px;border-radius:8px;border:1px solid rgba(245,158,11,0.28);background:rgba(245,158,11,0.06);cursor:pointer;"><input type="radio" name="swal-status" value="PENDING" checked style="accent-color:#f59e0b;width:13px;height:13px;"><span style="font-size:10px;font-weight:700;color:#f59e0b;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">PENDING</span></label>
+          <label style="flex:1;display:flex;align-items:center;gap:7px;padding:9px 11px;border-radius:8px;border:1px solid rgba(244,63,94,0.22);background:rgba(244,63,94,0.05);cursor:pointer;"><input type="radio" name="swal-status" value="REPORTED" style="accent-color:#f43f5e;width:13px;height:13px;"><span style="font-size:10px;font-weight:700;color:#f43f5e;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">REPORTED</span></label>
+        </div>
+      </div>
+      <div style="background:rgba(34,211,238,0.04);border:1px solid rgba(34,211,238,0.14);border-radius:8px;padding:10px;"><p class="section-label" style="margin-bottom:3px;color:#3d5a7a;">Requested By</p><p style="font-size:11px;color:#22d3ee;font-family:'Share Tech Mono',monospace;font-weight:700;">${currentUser.username} — ${currentUser.name}</p></div>
+    </div>`,
+    focusConfirm:false,showCancelButton:true,confirmButtonColor:'#0891b2',cancelButtonColor:'#162d4a',confirmButtonText:'Submit Request',
+    preConfirm:()=>{
+      const cEl=document.getElementById('swal-counter');
+      const statusEl=document.querySelector('input[name="swal-status"]:checked');
+      return{date:document.getElementById('swal-date').value,counter:cEl?cEl.value.toUpperCase().trim():'',type:document.getElementById('swal-type').value,sn:document.getElementById('swal-sn').value.trim(),remarks:document.getElementById('swal-remarks').value.trim(),initialStatus:statusEl?statusEl.value:'PENDING'};
+    }
+  });
+  if(fv){
+    if(!fv.date||!fv.counter||!fv.sn){Swal.fire({icon:'error',title:'Error',text:'Please fill all required fields.',background:'#0d1e33',color:'#fff'});return;}
+    saveRequest(fv);
+  }
+}
+
+async function openEditRequestModal(month,index){
+  const r=reportsData[month][index];
+  const{value:fv,isDenied}=await Swal.fire({
+    title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:17px;letter-spacing:2px;">EDIT REQUEST</span>',
+    background:'#0d1e33',
+    html:`<div style="display:flex;flex-direction:column;gap:12px;text-align:left;padding:4px;"><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Date Reported</p><input id="swal-date" type="date" value="${r.date}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Counter</p><div id="counter-select-wrap">${buildCounterSelectHtml(r.counter)}</div></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Type</p><select id="swal-type" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"><option value="TERMINAL" ${r.type==='TERMINAL'?'selected':''} style="background:#0d1e33;">TERMINAL</option><option value="CABLE" ${r.type==='CABLE'?'selected':''} style="background:#0d1e33;">CABLE</option></select></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Serial Number</p><input id="swal-sn" value="${r.sn}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Remarks / Notes</p><input id="swal-remarks" value="${r.remarks||''}" placeholder="Optional notes..." class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div></div>`,
+    focusConfirm:false,showCancelButton:true,showDenyButton:true,
+    denyButtonText:'<i class="fa-solid fa-trash" style="margin-right:4px;"></i>Delete',
+    denyButtonColor:'#be123c',confirmButtonColor:'#0891b2',cancelButtonColor:'#162d4a',
+    preConfirm:()=>{const cEl=document.getElementById('swal-counter');return{date:document.getElementById('swal-date').value,counter:cEl?cEl.value.toUpperCase().trim():r.counter,type:document.getElementById('swal-type').value,sn:document.getElementById('swal-sn').value.trim(),remarks:document.getElementById('swal-remarks').value.trim()};}
+  });
+  if(isDenied){
+    const conf=await Swal.fire({title:'Delete?',text:'Remove this request permanently?',icon:'warning',showCancelButton:true,confirmButtonColor:'#be123c',cancelButtonColor:'#162d4a',background:'#0d1e33',color:'#fff'});
+    if(conf.isConfirmed){
+      reportsData[month].splice(index,1);
+      updateMonthCard(month);updateDashboardStats();updateActivePercentage();updateUrgentAlerts();autoSave();
+      viewMonthDetails(month);toast('success','Request deleted');
+    }
+  }else if(fv){
+    if(!fv.date||!fv.counter||!fv.sn){Swal.fire({icon:'error',title:'Error',text:'Please fill all fields.',background:'#0d1e33',color:'#fff'});return;}
+    reportsData[month][index]={...r,...fv};
+    updateMonthCard(month);updateDashboardStats();updateActivePercentage();updateUrgentAlerts();autoSave();
+    viewMonthDetails(month);toast('success','Request updated');
+  }
+}
+
+function saveRequest(data){
+  const dateObj=new Date(data.date+'T00:00:00');
+  const monthName=monthsList[dateObj.getMonth()];
+  if(!reportsData[monthName])reportsData[monthName]=[];
+  const initStatus=data.initialStatus||'PENDING';
+  reportsData[monthName].push({...data,done:false,status:initStatus,doneDate:null,requestedBy:currentUser?`${currentUser.username} — ${currentUser.name}`:'Unknown'});
+  updateDashboardStats();updateMonthCard(monthName);updateActivePercentage();updateUrgentAlerts();autoSave();
+  Swal.fire({icon:'success',title:'Request Added',text:`Saved as ${initStatus}.`,background:'#0d1e33',color:'#fff',timer:1400,showConfirmButton:false});
+}
+
+function updateMonthCard(month){
+  const existingCard=document.getElementById(`card-${month}`);
+  if(existingCard)existingCard.remove();
+  buildMonthCardElement(month);
+}
+
+function updateDashboardStats(){
+  let comp=0,pend=0,rep=0,total=0;
+  Object.values(reportsData).forEach(m=>{total+=m.length;comp+=m.filter(r=>r.status==='DONE').length;pend+=m.filter(r=>r.status==='PENDING').length;rep+=m.filter(r=>r.status==='REPORTED').length;});
+  document.getElementById('stat-total').innerText=total;
+  document.getElementById('stat-completed').innerText=comp;
+  document.getElementById('stat-pending').innerText=pend;
+  document.getElementById('stat-reported').innerText=rep;
+}
+
+// ═══════════════════════════════════════════════════
+// STATUS TABS
+// ═══════════════════════════════════════════════════
+const STATUS_CFG={
+  REPORTED:{color:'var(--rose)',bg:'rgba(244,63,94,0.12)',border:'rgba(244,63,94,0.35)',activeBg:'rgba(244,63,94,0.16)'},
+  PENDING:{color:'var(--amber)',bg:'rgba(245,158,11,0.12)',border:'rgba(245,158,11,0.35)',activeBg:'rgba(245,158,11,0.14)'},
+  DONE:{color:'var(--emerald)',bg:'rgba(16,185,129,0.12)',border:'rgba(16,185,129,0.35)',activeBg:'rgba(16,185,129,0.14)'},
+};
+const MOVE_TO_OPTIONS={REPORTED:['PENDING','DONE'],PENDING:['REPORTED','DONE'],DONE:['REPORTED','PENDING']};
+
+function applyStatusTabUI(active){
+  ['REPORTED','PENDING','DONE'].forEach(s=>{
+    const btn=document.getElementById(`stab-${s.toLowerCase()}`);if(!btn)return;
+    const cfg=STATUS_CFG[s];
+    if(s===active){btn.style.background=cfg.activeBg;btn.style.color=cfg.color;btn.style.fontWeight='800';btn.style.boxShadow=`inset 0 -2px 0 ${cfg.color}`;}
+    else{btn.style.background='var(--input-bg)';btn.style.color='var(--text-dim)';btn.style.fontWeight='700';btn.style.boxShadow='none';}
+  });
+}
+
+function setStatusTab(status){currentMonthFilter=status;applyStatusTabUI(status);renderMonthTable(currentMonth);}
+
+// ═══════════════════════════════════════════════════
+// MONTH DETAILS
+// ═══════════════════════════════════════════════════
+function viewMonthDetails(month){
+  currentMonth=month;currentMonthFilter='REPORTED';
+  ['dashboardView','reportsView','teamView','settingsView','countersView','nodesView'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('active');});
+  const mv=document.getElementById('monthDetailsView');mv.style.display='flex';mv.classList.add('active');
+  ['dashboard','reports','team','settings','counters','nodes'].forEach(n=>{const el=document.getElementById(`nav-${n}`);if(el)el.classList.remove('active');});
+  document.getElementById('nav-dashboard').classList.add('active');
+  document.getElementById('monthTitle').innerText=`${month.toUpperCase()} 2026`;
+  const si=document.getElementById('monthSearchInput');if(si)si.value='';
+  setStatusTab('REPORTED');
+}
+
+function renderMonthTable(month){
+  if(!month)return;
+  const data=reportsData[month]||[];
+  const searchVal=(document.getElementById('monthSearchInput')?.value||'').toLowerCase();
+  const cntR=data.filter(r=>r.status==='REPORTED').length;
+  const cntP=data.filter(r=>r.status==='PENDING').length;
+  const cntD=data.filter(r=>r.status==='DONE').length;
+  const spAll=data.filter(r=>r.counter&&r.counter.startsWith('SP')).length;
+  const dsAll=data.filter(r=>r.counter&&r.counter.startsWith('DS')).length;
+  const setCount=(id,n,cfg)=>{const el=document.getElementById(id);if(!el)return;el.innerText=n;el.style.cssText=`margin-left:3px;padding:1px 6px;border-radius:9px;font-size:8px;font-weight:700;background:${cfg.bg};color:${cfg.color};border:1px solid ${cfg.border};`;};
+  setCount('stab-reported-count',cntR,STATUS_CFG.REPORTED);
+  setCount('stab-pending-count',cntP,STATUS_CFG.PENDING);
+  setCount('stab-done-count',cntD,STATUS_CFG.DONE);
+  const pillsEl=document.getElementById('monthSummaryPills');
+  if(pillsEl)pillsEl.innerHTML=`<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;"><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-right:3px;">TOTAL:</span><span style="padding:2px 10px;border-radius:20px;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.18);font-size:9px;font-weight:700;color:var(--cyan);font-family:'Share Tech Mono',monospace;">SP: ${spAll}</span><span style="padding:2px 10px;border-radius:20px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18);font-size:9px;font-weight:700;color:var(--amber);font-family:'Share Tech Mono',monospace;">DS: ${dsAll}</span><span style="padding:2px 10px;border-radius:20px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.18);font-size:9px;font-weight:700;color:var(--emerald);font-family:'Share Tech Mono',monospace;"><i class="fa-solid fa-check" style="margin-right:3px;"></i>${cntD} Done</span><span style="padding:2px 10px;border-radius:20px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18);font-size:9px;font-weight:700;color:var(--amber);font-family:'Share Tech Mono',monospace;"><i class="fa-solid fa-clock" style="margin-right:3px;"></i>${cntP} Pending</span><span style="padding:2px 10px;border-radius:20px;background:rgba(244,63,94,0.07);border:1px solid rgba(244,63,94,0.18);font-size:9px;font-weight:700;color:var(--rose);font-family:'Share Tech Mono',monospace;"><i class="fa-solid fa-flag" style="margin-right:3px;"></i>${cntR} Reported</span></div>`;
+  let filtered=data.map((r,i)=>({...r,_idx:i})).filter(r=>{if(r.status!==currentMonthFilter)return false;if(searchVal&&!(r.counter||'').toLowerCase().includes(searchVal)&&!(r.sn||'').toLowerCase().includes(searchVal)&&!(r.requestedBy||'').toLowerCase().includes(searchVal))return false;return true;});
+  const spData=filtered.filter(r=>r.counter&&r.counter.startsWith('SP'));
+  const dsData=filtered.filter(r=>r.counter&&r.counter.startsWith('DS'));
+  const spPill=document.getElementById('spCountPill');const dsPill=document.getElementById('dsCountPill');
+  if(spPill)spPill.innerText=spData.length;if(dsPill)dsPill.innerText=dsData.length;
+  const emptyEl=document.getElementById('monthEmptyState');const emptyTxt=document.getElementById('monthEmptyText');
+  if(!spData.length&&!dsData.length){if(emptyEl){emptyEl.style.display='block';if(emptyTxt)emptyTxt.innerText=searchVal?`No results for "${searchVal}".`:`No ${currentMonthFilter.toLowerCase()} records this month.`;}document.getElementById('spDsSplitContainer').style.opacity='0.3';}
+  else{if(emptyEl)emptyEl.style.display='none';document.getElementById('spDsSplitContainer').style.opacity='1';}
+  renderColumnBody('spTableBody',month,spData);
+  renderColumnBody('dsTableBody',month,dsData);
+}
+
+function renderColumnBody(tbodyId,month,dataArr){
+  const tbody=document.getElementById(tbodyId);
+  if(!dataArr.length){tbody.innerHTML=`<tr><td colspan="8" style="padding:18px;text-align:center;color:var(--text-dim);font-style:italic;font-size:11px;">No records.</td></tr>`;return;}
+  const curStatus=currentMonthFilter;
+  const moveOptions=MOVE_TO_OPTIONS[curStatus]||[];
+  const optColors={PENDING:'var(--amber)',REPORTED:'var(--rose)',DONE:'var(--emerald)'};
+  const tabCfg=STATUS_CFG[curStatus];
+  tbody.innerHTML='';
+  dataArr.forEach(report=>{
+    const i=report._idx;
+    const doneDateHtml=report.doneDate?`<span class="done-date-badge">${report.doneDate}</span>`:`<span style="color:var(--text-dim);font-size:9px;">—</span>`;
+    const remarksHtml=report.remarks?`<span style="font-size:9px;color:var(--violet);max-width:100px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${report.remarks}">${report.remarks}</span>`:`<span style="color:var(--text-dim);font-size:9px;">—</span>`;
+    const optionsHtml=moveOptions.map(s=>`<option value="${s}" style="background:#0d1e33;color:${optColors[s]};">→ ${s}</option>`).join('');
+    const selectHtml=`<select onchange="if(this.value){guardedStatus('${month}',${i},this.value);this.value='';}" class="move-to-select" style="border-color:${tabCfg.border};"><option value="">→ Move…</option>${optionsHtml}</select>`;
+    tbody.innerHTML+=`<tr>
+      <td style="color:var(--text-mid);font-family:'Share Tech Mono',monospace;font-size:9px;white-space:nowrap;">${report.date}</td>
+      <td style="font-weight:700;font-family:'Rajdhani',sans-serif;font-size:14px;">${formatCounter(report.counter)}</td>
+      <td style="font-family:'Share Tech Mono',monospace;color:var(--text-dim);font-size:9px;">${report.sn}</td>
+      <td><span class="user-badge" style="white-space:nowrap;">${(report.requestedBy||'—').split(' — ')[0]}</span></td>
+      <td>${remarksHtml}</td>
+      <td>${selectHtml}</td>
+      <td>${doneDateHtml}</td>
+      <td><button onclick="guardedEdit('${month}',${i})" class="btn-secondary" style="padding:4px 9px;font-size:9px;gap:4px;"><i class="fa-solid fa-pen-to-square" style="color:var(--cyan);"></i>Edit</button></td>
+    </tr>`;
+  });
+}
+
+async function setStatus(month,index,newStatus){
+  const r=reportsData[month][index];
+  if(newStatus===r.status)return;
+  if(newStatus==='DONE'){
+    const todayStr=new Date().toISOString().split('T')[0];
+    const{value:doneDate,isDismissed}=await Swal.fire({
+      title:'<span style="font-family:Rajdhani,sans-serif;color:var(--emerald);font-size:15px;letter-spacing:2px;">DATE COMPLETED</span>',
+      html:`<div style="text-align:left;padding:4px;"><p style="font-size:10px;color:#7a9cc0;margin-bottom:10px;">Enter the date this was completed / cable received:</p><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Date Done / Received</p><input id="done-date-input" type="date" value="${todayStr}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div>`,
+      background:'#0d1e33',showCancelButton:true,confirmButtonColor:'#10b981',cancelButtonColor:'#162d4a',
+      confirmButtonText:'<i class="fa-solid fa-check" style="margin-right:5px;"></i>Confirm Done',
+      preConfirm:()=>document.getElementById('done-date-input').value
+    });
+    if(isDismissed)return;
+    r.doneDate=doneDate||todayStr;
+  }else{r.doneDate=null;}
+  r.status=newStatus;
+  updateMonthCard(month);updateDashboardStats();updateActivePercentage();updateUrgentAlerts();autoSave();
+  toast('success',`Moved to ${newStatus}`);
+  renderMonthTable(month);
+}
+
+function goBackDashboard(){
+  const mv=document.getElementById('monthDetailsView');mv.style.display='none';mv.classList.remove('active');
+  document.getElementById('dashboardView').classList.add('active');
+  document.getElementById('nav-dashboard').classList.add('active');
+  currentMonth=null;
+}
+
+// ═══════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════
+function exportMonthReport(){
+  if(!currentMonth||!reportsData[currentMonth]||!reportsData[currentMonth].length){toast('warning','No data to export');return;}
+  const wb=XLSX.utils.book_new();
+  const wsData=[['Date Reported','Counter','Type','Serial Number','Requested By','Remarks','Status','Date Done']];
+  reportsData[currentMonth].forEach(r=>wsData.push([r.date,r.counter,r.type,r.sn,r.requestedBy||'—',r.remarks||'—',r.status,r.doneDate||'—']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsData),currentMonth);
+  XLSX.writeFile(wb,`GHL_${currentMonth}_2026.xlsx`);
+  toast('success',`${currentMonth} exported`);
+}
+
+function exportReport(){
+  if(!Object.keys(reportsData).length){toast('warning','No data to export');return;}
+  const wb=XLSX.utils.book_new();
+  Object.keys(reportsData).forEach(month=>{
+    if(!reportsData[month].length)return;
+    const wsData=[['Date Reported','Counter','Type','Serial Number','Requested By','Remarks','Status','Date Done']];
+    reportsData[month].forEach(r=>wsData.push([r.date,r.counter,r.type,r.sn,r.requestedBy||'—',r.remarks||'—',r.status,r.doneDate||'—']));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsData),month);
+  });
+  XLSX.writeFile(wb,'GHL_Terminal_Report_2026.xlsx');
+  toast('success','Report exported');
+}
+
+// ═══════════════════════════════════════════════════
+// COUNTER INVENTORY
+// ═══════════════════════════════════════════════════
+function setCounterFilter(f){
+  currentCounterFilter=f;
+  ['ALL','SP','DS'].forEach(n=>{const el=document.getElementById(`cf-${n.toLowerCase()}`);if(!el)return;if(n===f){el.style.background='rgba(34,211,238,0.1)';el.style.color='var(--cyan)';}else{el.style.background='transparent';el.style.color='var(--text-dim)';}});
+  renderCountersPage();
+}
+
+function renderCountersPage(){
+  const search=(document.getElementById('counterSearch')?.value||'').toLowerCase();
+  const snMap=getSnMapping();
+  const spCounters=Object.keys(defaultSnMapping).filter(c=>c.startsWith('SP')).sort();
+  const dsCounters=Object.keys(defaultSnMapping).filter(c=>c.startsWith('DS')).sort();
+  document.getElementById('cnt-total').innerText=Object.keys(defaultSnMapping).length;
+  document.getElementById('cnt-replaced').innerText=Object.values(counterInventory).filter(v=>v.replaced).length;
+  document.getElementById('cnt-original').innerText=Object.keys(defaultSnMapping).length-Object.values(counterInventory).filter(v=>v.replaced).length;
+  const show_sp=currentCounterFilter==='ALL'||currentCounterFilter==='SP';
+  const show_ds=currentCounterFilter==='ALL'||currentCounterFilter==='DS';
+  document.getElementById('cnt-sp-section').style.display=show_sp?'block':'none';
+  document.getElementById('cnt-ds-section').style.display=show_ds?'block':'none';
+  const renderGrid=(gridId,counters)=>{
+    const grid=document.getElementById(gridId);grid.innerHTML='';
+    const filtered=counters.filter(c=>c.toLowerCase().includes(search)||(snMap[c]||'').includes(search));
+    if(!filtered.length){grid.innerHTML=`<p style="color:var(--text-dim);font-size:10px;grid-column:1/-1;">No counters match.</p>`;return;}
+    filtered.forEach(counter=>{
+      const inv=counterInventory[counter]||{};const isReplaced=inv.replaced||false;const currentSN=inv.currentSN||defaultSnMapping[counter]||'—';
+      const prefix=counter.startsWith('SP')?'SP':'DS';const pc=prefix==='SP'?'var(--cyan)':'var(--amber)';
+      const div=document.createElement('div');
+      div.style.cssText=`background:var(--glass-bg);border:1px solid var(--card-border);border-radius:11px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:all 0.2s;`;
+      div.innerHTML=`<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;"><span style="font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:${pc};">${counter}</span>${isReplaced?`<span style="font-size:7px;padding:1px 7px;border-radius:4px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.22);color:var(--emerald);font-weight:700;font-family:'Share Tech Mono',monospace;">REPLACED</span>`:''}</div><p style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">SN: <span style="color:var(--text);">${currentSN}</span></p>${inv.replacedDate?`<p style="font-size:8px;color:var(--emerald);margin-top:2px;">Replaced: ${inv.replacedDate}</p>`:''}</div><button onclick="editCounterInventory('${counter}')" style="background:rgba(34,211,238,0.05);border:1px solid rgba(34,211,238,0.14);border-radius:7px;padding:5px 9px;color:var(--cyan);cursor:pointer;font-size:9px;" title="Edit"><i class="fa-solid fa-pen"></i></button>`;
+      div.addEventListener('mouseenter',()=>{div.style.borderColor=pc;});
+      div.addEventListener('mouseleave',()=>{div.style.borderColor='';});
+      grid.appendChild(div);
+    });
+  };
+  if(show_sp)renderGrid('cnt-sp-grid',spCounters);
+  if(show_ds)renderGrid('cnt-ds-grid',dsCounters);
+}
+
+async function editCounterInventory(counter){
+  const inv=counterInventory[counter]||{};const origSN=defaultSnMapping[counter]||'';const currentSN=inv.currentSN||origSN;
+  const{value:fv}=await Swal.fire({
+    title:`<span style="font-family:Rajdhani,sans-serif;color:white;font-size:15px;letter-spacing:2px;">EDIT: ${counter}</span>`,
+    background:'#0d1e33',
+    html:`<div style="display:flex;flex-direction:column;gap:12px;text-align:left;padding:4px;"><div style="background:rgba(34,211,238,0.04);border:1px solid rgba(34,211,238,0.1);border-radius:8px;padding:9px;"><p class="section-label" style="margin-bottom:2px;color:#3d5a7a;">Original SN</p><p style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#7a9cc0;">${origSN}</p></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Current Serial Number</p><input id="inv-sn" value="${currentSN}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Date Replaced</p><input id="inv-date" type="date" value="${inv.replacedDate||''}" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div><div><p class="section-label" style="margin-bottom:6px;color:#3d5a7a;">Note</p><input id="inv-note" value="${inv.note||''}" placeholder="e.g. Unit replaced due to damage" class="swal2-input swal-input-custom" style="margin:0;width:100%;font-size:11px;"></div><label style="display:flex;align-items:center;gap:9px;cursor:pointer;"><input id="inv-replaced" type="checkbox" style="accent-color:#10b981;width:15px;height:15px;" ${inv.replaced?'checked':''}><span style="font-size:10px;color:#c8dff5;font-weight:600;">Mark as Replaced</span></label></div>`,
+    focusConfirm:false,showCancelButton:true,confirmButtonColor:'#0891b2',cancelButtonColor:'#162d4a',confirmButtonText:'Save Changes',
+    preConfirm:()=>({currentSN:document.getElementById('inv-sn').value.trim(),replacedDate:document.getElementById('inv-date').value,note:document.getElementById('inv-note').value.trim(),replaced:document.getElementById('inv-replaced').checked})
+  });
+  if(fv){counterInventory[counter]=fv;autoSave();renderCountersPage();toast('success',`${counter} updated`);}
+}
+
+// ═══════════════════════════════════════════════════
+// REPORTS PAGE
+// ═══════════════════════════════════════════════════
+function renderReportsPage(){
+  let total=0,done=0,pend=0,rep=0;
+  Object.values(reportsData).forEach(m=>{total+=m.length;done+=m.filter(r=>r.status==='DONE').length;pend+=m.filter(r=>r.status==='PENDING').length;rep+=m.filter(r=>r.status==='REPORTED').length;});
+  document.getElementById('rpt-total').innerText=total;
+  document.getElementById('rpt-done').innerText=done;
+  document.getElementById('rpt-pending').innerText=pend;
+  document.getElementById('rpt-reported').innerText=rep;
+  document.getElementById('rpt-done-pct').innerText=total?((done/total)*100).toFixed(1)+'% rate':'0% rate';
+  document.getElementById('rpt-pending-pct').innerText=total?((pend/total)*100).toFixed(1)+'% rate':'0% rate';
+  document.getElementById('rpt-reported-pct').innerText=total?((rep/total)*100).toFixed(1)+'% rate':'0% rate';
+  const barsEl=document.getElementById('rpt-monthly-bars');
+  const months=Object.keys(reportsData).sort((a,b)=>monthsList.indexOf(a)-monthsList.indexOf(b));
+  if(!months.length){barsEl.innerHTML='<p style="color:var(--text-dim);font-size:10px;font-style:italic;">No data yet.</p>';}
+  else{const maxM=Math.max(...months.map(m=>reportsData[m].length),1);barsEl.innerHTML=months.map(month=>{const mt=reportsData[month].length,md=reportsData[month].filter(r=>r.status==='DONE').length;return`<div><div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:5px;"><span style="color:var(--text-mid);font-weight:700;font-family:'Share Tech Mono',monospace;">${month.slice(0,3).toUpperCase()}</span><span style="color:var(--text);font-weight:700;">${mt} <span style="color:var(--emerald);">(${md} done)</span></span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.round((mt/maxM)*100)}%;"></div></div></div>`;}).join('');}
+  let tc=0,cc=0;Object.values(reportsData).forEach(m=>{tc+=m.filter(r=>r.type==='TERMINAL').length;cc+=m.filter(r=>r.type==='CABLE').length;});
+  const tt=tc+cc;
+  document.getElementById('rpt-type-split').innerHTML=tt===0?'<p style="color:var(--text-dim);font-size:10px;font-style:italic;">No data yet.</p>':`<div><div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:5px;"><span style="color:var(--amber);font-weight:700;font-family:'Share Tech Mono',monospace;">TERMINAL</span><span style="color:var(--text);font-weight:700;">${tc} (${tt?((tc/tt)*100).toFixed(0):0}%)</span></div><div class="bar-track"><div style="height:5px;border-radius:4px;background:var(--amber);width:${tt?((tc/tt)*100):0}%;"></div></div></div><div><div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:5px;"><span style="color:var(--cyan);font-weight:700;font-family:'Share Tech Mono',monospace;">CABLE</span><span style="color:var(--text);font-weight:700;">${cc} (${tt?((cc/tt)*100).toFixed(0):0}%)</span></div><div class="bar-track"><div style="height:5px;border-radius:4px;background:var(--cyan);width:${tt?((cc/tt)*100):0}%;"></div></div></div>`;
+  const userMap={};Object.values(reportsData).forEach(m=>m.forEach(r=>{const k=r.requestedBy||'Unknown';userMap[k]=(userMap[k]||0)+1;}));
+  const userMax=Math.max(...Object.values(userMap),1);
+  document.getElementById('rpt-user-breakdown').innerHTML=!Object.keys(userMap).length?'<p style="color:var(--text-dim);font-size:10px;font-style:italic;">No data yet.</p>':Object.entries(userMap).map(([u,n])=>`<div><div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:5px;"><span style="color:var(--cyan);font-weight:700;font-family:'Share Tech Mono',monospace;">${u}</span><span style="color:var(--text);font-weight:700;">${n} request${n>1?'s':''}</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.round((n/userMax)*100)}%;"></div></div></div>`).join('');
+  const counterMap={};Object.values(reportsData).forEach(m=>m.forEach(r=>{counterMap[r.counter]=(counterMap[r.counter]||0)+1;}));
+  const sorted=Object.entries(counterMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  document.getElementById('rpt-top-counters').innerHTML=!sorted.length?'<p style="color:var(--text-dim);font-size:10px;font-style:italic;">No data yet.</p>':sorted.map(([c,n])=>`<div class="glass-card" style="padding:12px;"><p style="color:var(--text);font-weight:700;font-size:13px;font-family:'Rajdhani',sans-serif;">${c}</p><p style="font-size:9px;color:var(--text-dim);margin-top:3px;">${n} request${n>1?'s':''}</p><div class="bar-track" style="margin-top:7px;"><div class="bar-fill" style="width:${Math.min(100,(n/(sorted[0][1]||1))*100)}%;height:3px;"></div></div></div>`).join('');
+  const today=new Date();today.setHours(0,0,0,0);
+  let longPending=[];
+  Object.keys(reportsData).forEach(month=>{reportsData[month].forEach((r,i)=>{if(r.status!=='PENDING')return;const rd=new Date(r.date+'T00:00:00');rd.setHours(0,0,0,0);const days=Math.floor((today-rd)/86400000);if(days>=3)longPending.push({...r,month,index:i,days});});});
+  document.getElementById('rpt-long-pending').innerHTML=!longPending.length?'<p style="color:var(--text-dim);font-size:10px;font-style:italic;">No long pending requests. Great job!</p>':`<table style="width:100%;border-collapse:collapse;min-width:500px;font-size:10px;"><thead><tr style="font-size:8px;letter-spacing:2px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;border-bottom:1px solid var(--border);"><th style="padding:9px 0;text-align:left;">Counter</th><th style="padding:9px 0;text-align:left;">SN</th><th style="padding:9px 0;text-align:left;">Date</th><th style="padding:9px 0;text-align:left;">Month</th><th style="padding:9px 0;text-align:left;">By</th><th style="padding:9px;text-align:center;">Days</th></tr></thead><tbody>${longPending.map(r=>`<tr style="border-bottom:1px solid rgba(22,45,74,0.3);"><td style="padding:10px 0;color:var(--text);font-weight:700;font-family:'Rajdhani',sans-serif;">${r.counter}</td><td style="padding:10px 0;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:9px;">${r.sn}</td><td style="padding:10px 0;color:var(--text-dim);">${r.date}</td><td style="padding:10px 0;color:var(--text-mid);">${r.month}</td><td style="padding:10px 0;"><span class="user-badge">${r.requestedBy||'—'}</span></td><td style="padding:10px;text-align:center;"><span style="padding:2px 9px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.22);color:var(--rose);border-radius:5px;font-size:9px;font-weight:700;">${r.days}d</span></td></tr>`).join('')}</tbody></table>`;
+}
+
+// ═══════════════════════════════════════════════════
+// QUICK ACTIONS
+// ═══════════════════════════════════════════════════
+async function viewAllRequests(){
+  let html=`<div style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;padding-right:8px;text-align:left;">`;
+  let count=0;
+  Object.keys(reportsData).forEach(month=>{reportsData[month].forEach(r=>{count++;const sc=r.status==='DONE'?'rgba(16,185,129,0.09)':r.status==='REPORTED'?'rgba(244,63,94,0.09)':'rgba(245,158,11,0.09)';const tc=r.status==='DONE'?'#10b981':r.status==='REPORTED'?'#f43f5e':'#f59e0b';html+=`<div style="padding:10px;background:rgba(10,22,38,0.7);border-radius:9px;border:1px solid #162d4a;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><div><p style="color:white;font-weight:700;font-size:13px;font-family:Rajdhani,sans-serif;">${r.counter}</p><p style="font-size:9px;color:#7a9cc0;">Type: <span style="color:#22d3ee;font-weight:700;">${r.type}</span></p></div><span style="font-size:9px;padding:2px 9px;border-radius:5px;background:${sc};color:${tc};font-weight:700;">${r.status}</span></div><div style="border-top:1px solid #162d4a;padding-top:7px;"><p style="font-size:9px;color:#7a9cc0;">SN: <span style="font-family:'Share Tech Mono',monospace;color:#c8dff5;">${r.sn}</span></p><p style="font-size:9px;color:#7a9cc0;margin-top:2px;">Date: <span style="color:#c8dff5;">${r.date}</span> | Month: <span style="color:#22d3ee;">${month}</span></p><p style="font-size:9px;color:#7a9cc0;margin-top:2px;">By: <span style="color:#22d3ee;font-family:'Share Tech Mono',monospace;">${r.requestedBy||'—'}</span></p>${r.remarks?`<p style="font-size:9px;color:#8b5cf6;margin-top:2px;">${r.remarks}</p>`:''}</div></div>`;});});
+  if(!count)html=`<div style="text-align:center;padding:36px;"><i class="fa-solid fa-inbox" style="font-size:38px;color:rgba(34,211,238,0.09);"></i><p style="color:#7a9cc0;margin-top:10px;font-size:12px;">No requests found.</p></div>`;
+  html+='</div>';
+  Swal.fire({title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:17px;letter-spacing:2px;">ALL REQUESTS</span>',background:'#0d1e33',html,confirmButtonColor:'#0891b2',width:540});
+}
+
+async function openFollowUpTracker(){
+  let pendingItems=[];
+  Object.keys(reportsData).forEach(month=>{reportsData[month].forEach((r,i)=>{if(r.status!=='DONE')pendingItems.push({...r,month,index:i});});});
+  let html='';
+  if(!pendingItems.length){html=`<div style="text-align:center;padding:36px;"><i class="fa-solid fa-check-double" style="font-size:38px;color:#10b981;"></i><p style="color:#10b981;margin-top:10px;font-weight:700;font-size:13px;">All caught up! No pending.</p></div>`;}
+  else{
+    html=`<div style="display:flex;flex-direction:column;gap:9px;max-height:400px;overflow-y:auto;padding-right:8px;text-align:left;">`;
+    pendingItems.forEach(item=>{const key=`${item.month}-${item.index}`;const lastDate=lastFollowUpDates[key]||'';const sc=item.status==='REPORTED'?'rgba(244,63,94,0.1)':'rgba(245,158,11,0.1)';const tc=item.status==='REPORTED'?'#f43f5e':'#f59e0b';html+=`<div style="padding:10px;background:rgba(10,22,38,0.7);border-radius:9px;border:1px solid #162d4a;"><div style="display:flex;justify-content:space-between;margin-bottom:7px;"><span style="color:white;font-weight:700;font-size:13px;font-family:Rajdhani,sans-serif;">${item.counter}</span><span style="font-size:9px;padding:2px 9px;border-radius:5px;background:${sc};color:${tc};font-weight:700;">${item.status}</span></div><p style="font-size:9px;color:#7a9cc0;margin-bottom:8px;">SN: <span style="font-family:'Share Tech Mono',monospace;color:#c8dff5;">${item.sn}</span></p><div><p class="section-label" style="margin-bottom:4px;color:#3d5a7a;">Last Follow-up Date</p><input type="date" value="${lastDate}" onchange="saveFollowUpDate('${item.month}',${item.index},this.value)" style="background:#04080f;border:1px solid #162d4a;border-radius:7px;padding:5px 9px;font-size:11px;color:white;width:100%;outline:none;"></div></div>`;});
+    html+='</div>';
+  }
+  Swal.fire({title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:17px;letter-spacing:2px;">FOLLOW-UP TRACKER</span>',background:'#0d1e33',html,confirmButtonColor:'#0891b2',width:520});
+}
+
+function saveFollowUpDate(month,index,dateVal){lastFollowUpDates[`${month}-${index}`]=dateVal;autoSave();toast('success','Follow-up date saved');}
+
+async function generateMonthlySummary(){
+  const months=Object.keys(reportsData).sort((a,b)=>monthsList.indexOf(a)-monthsList.indexOf(b));
+  let html=`<div style="display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto;padding-right:6px;">`;
+  if(!months.length){html+=`<div style="text-align:center;padding:28px;"><p style="color:#7a9cc0;">No data available yet.</p></div>`;}
+  else{months.forEach(month=>{const arr=reportsData[month];const total=arr.length,done=arr.filter(r=>r.status==='DONE').length,pend=arr.filter(r=>r.status==='PENDING').length,rep=arr.filter(r=>r.status==='REPORTED').length;const sp=arr.filter(r=>r.counter&&r.counter.startsWith('SP')).length;const ds=arr.filter(r=>r.counter&&r.counter.startsWith('DS')).length;const mi=monthsList.indexOf(month);const daysInMonth=new Date(2026,mi+1,0).getDate();const avg=(total/daysInMonth).toFixed(2);const cr=total?((done/total)*100).toFixed(1):'0.0';html+=`<div style="padding:14px;background:rgba(10,22,38,0.8);border-radius:11px;border:1px solid #162d4a;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div><p class="section-label" style="font-size:7px;margin-bottom:2px;color:#3d5a7a;">2026</p><span style="font-weight:700;font-family:Rajdhani,sans-serif;color:white;font-size:16px;">${month.toUpperCase()}</span></div><div style="text-align:right;"><span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#c8dff5;">${total}</span><p class="section-label" style="font-size:7px;color:#3d5a7a;">TOTAL</p></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:9px;"><div style="background:rgba(34,211,238,0.05);border:1px solid rgba(34,211,238,0.12);border-radius:7px;padding:8px;text-align:center;"><p style="font-size:7px;color:#22d3ee;font-family:'Share Tech Mono',monospace;margin-bottom:2px;">SP</p><p style="font-size:16px;font-weight:700;color:#22d3ee;font-family:'Rajdhani',sans-serif;">${sp}</p></div><div style="background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.12);border-radius:7px;padding:8px;text-align:center;"><p style="font-size:7px;color:#f59e0b;font-family:'Share Tech Mono',monospace;margin-bottom:2px;">DS</p><p style="font-size:16px;font-weight:700;color:#f59e0b;font-family:'Rajdhani',sans-serif;">${ds}</p></div><div style="background:rgba(4,10,20,0.5);border:1px solid #162d4a;border-radius:7px;padding:8px;text-align:center;"><p style="font-size:7px;color:#3d5a7a;font-family:'Share Tech Mono',monospace;margin-bottom:2px;">AVG/DAY</p><p style="font-size:14px;font-weight:700;color:#c8dff5;font-family:'Rajdhani',sans-serif;">${avg}</p></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px;"><div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:7px;padding:8px;text-align:center;"><p style="font-size:7px;color:#10b981;font-family:'Share Tech Mono',monospace;margin-bottom:2px;">DONE</p><p style="font-size:16px;font-weight:700;color:#10b981;font-family:'Rajdhani',sans-serif;">${done}</p></div><div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:7px;padding:8px;text-align:center;"><p style="font-size:7px;color:#f59e0b;font-family:'Share Tech Mono',monospace;margin-bottom:2px;">PENDING</p><p style="font-size:16px;font-weight:700;color:#f59e0b;font-family:'Rajdhani',sans-serif;">${pend}</p></div><div style="background:rgba(244,63,94,0.06);border:1px solid rgba(244,63,94,0.15);border-radius:7px;padding:8px;text-align:center;"><p style="font-size:7px;color:#f43f5e;font-family:'Share Tech Mono',monospace;margin-bottom:2px;">REPORTED</p><p style="font-size:16px;font-weight:700;color:#f43f5e;font-family:'Rajdhani',sans-serif;">${rep}</p></div></div><div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span class="section-label" style="font-size:7px;color:#3d5a7a;">COMPLETION RATE</span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#10b981;font-weight:700;">${cr}%</span></div><div class="bar-track" style="height:4px;"><div class="bar-fill" style="width:${cr}%;"></div></div></div></div>`; });}
+  html+='</div>';
+  Swal.fire({title:'<span style="font-family:Rajdhani,sans-serif;color:white;font-size:17px;letter-spacing:2px;">MONTHLY SUMMARY 2026</span>',background:'#0d1e33',html,confirmButtonColor:'#0891b2',width:520});
+}
+
+// ═══════════════════════════════════════════════════
+// 3-DAY ALERT
+// ═══════════════════════════════════════════════════
+function checkThreeDayAlerts(){
+  const today=new Date();today.setHours(0,0,0,0);
+  Object.keys(reportsData).forEach(month=>{reportsData[month].forEach((report,index)=>{
+    if(report.status!=='PENDING')return;
+    const rd=new Date(report.date+'T00:00:00');rd.setHours(0,0,0,0);
+    const diff=Math.floor((today-rd)/86400000);if(diff<3)return;
+    const key=`${month}-${index}`;if(shownAlerts[key])return;
+    shownAlerts[key]=true;autoSave();
+    Swal.fire({
+      background:'#0d1e33',color:'#c8dff5',width:480,
+      title:`<div style="display:flex;flex-direction:column;align-items:center;"><div style="width:56px;height:56px;border-radius:50%;background:rgba(244,63,94,0.1);border:2px solid rgba(244,63,94,0.28);display:flex;align-items:center;justify-content:center;margin-bottom:12px;"><i class="fa-solid fa-triangle-exclamation" style="color:#f43f5e;font-size:20px;"></i></div><span style="font-family:Rajdhani,sans-serif;font-size:17px;font-weight:700;color:#f43f5e;letter-spacing:2px;">URGENT ALERT</span></div>`,
+      html:`<div style="display:flex;flex-direction:column;gap:9px;margin-top:12px;text-align:left;"><div style="background:#04080f;border:1px solid #162d4a;border-radius:8px;padding:10px;"><p class="section-label" style="margin-bottom:2px;color:#3d5a7a;">Counter</p><p style="font-size:16px;font-weight:700;color:#22d3ee;font-family:Rajdhani,sans-serif;">${report.counter}</p></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;"><div style="background:#04080f;border:1px solid #162d4a;border-radius:8px;padding:10px;"><p class="section-label" style="margin-bottom:2px;color:#3d5a7a;">Date</p><p style="color:#f59e0b;font-weight:700;font-size:11px;">${report.date}</p></div><div style="background:#04080f;border:1px solid #162d4a;border-radius:8px;padding:10px;"><p class="section-label" style="margin-bottom:2px;color:#3d5a7a;">Days Pending</p><p style="color:#f43f5e;font-weight:700;font-size:15px;">${diff} DAYS</p></div></div></div>`,
+      confirmButtonText:'View Request',confirmButtonColor:'#be123c'
+    }).then(()=>{showPage('dashboard');viewMonthDetails(month);});
+  });});
+}
+
+// ═══════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════
+function toast(icon,title){Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:1400,background:'#0d1e33',color:'#fff'}).fire({icon,title});}
+
+// ═══════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════
+async function bootApp(savedUser) {
+  // 1. Load local backup first so UI is instant
+  loadLocalBackup();
+  applyTheme();
+
+  // 2. Then load fresh from Firebase
+  await loadDataFromFirebase();
+
+  currentUser = {username: savedUser, ...users[savedUser]};
+  if (isAdminUser()) editModeEnabled = true;
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+  setupUserUI();
+  initApp();
+  showPage('dashboard');
+  startRealtimeListener();
+
+  setTimeout(() => { checkThreeDayAlerts(); }, 2000);
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  applyTheme();
+
+  // Load local backup to fill users[] so login works even offline
+  loadLocalBackup();
+
+  const savedUser = loadSession();
+  if (savedUser && users[savedUser]) {
+    // Wait for Firebase SDK, then boot
+    if (window._fbReady) {
+      bootApp(savedUser);
+    } else {
+      window.addEventListener('firebase-ready', () => bootApp(savedUser), {once: true});
+      // Fallback if Firebase takes too long (3s)
+      setTimeout(() => {
+        if (!document.getElementById('appShell').style.display || document.getElementById('appShell').style.display === 'none') {
+          bootApp(savedUser);
+        }
+      }, 3000);
+    }
+  }
+});
+
+setInterval(() => { checkThreeDayAlerts(); updateUrgentAlerts(); }, 30000);
+window.addEventListener('beforeunload', () => { autoSave(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') autoSave(); });
+</script>
+</body>
+</html>
